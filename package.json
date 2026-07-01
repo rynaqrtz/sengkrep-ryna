@@ -1,6 +1,6 @@
 {
   "name": "sengkrep-ryna",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Scraping reliability layer for Node.js — schema validation, selector health monitoring, adaptive retry, fingerprint randomization, diff detection, response caching, cookie sessions, proxy rotation, rate limiting, interceptors, and JSON API extraction.",
   "main": "index.js",
   "keywords": [
