@@ -10,8 +10,8 @@
 
 <p align="center">
   <strong>Scraping reliability layer untuk Node.js.</strong><br />
-  Schema validation ¡¤ Selector health monitor ¡¤ Smart retry ¡¤ Fingerprint randomizer ¡¤ Diff detector<br />
-  Smart cache ¡¤ Cookie sessions ¡¤ Proxy rotation ¡¤ Rate limiter ¡¤ Interceptors ¡¤ JSON API extraction ¡¤ Sitemap discovery
+  Schema validation Â· Selector health monitor Â· Smart retry Â· Fingerprint randomizer Â· Diff detector<br />
+  Smart cache Â· Cookie sessions Â· Proxy rotation Â· Rate limiter Â· Interceptors Â· JSON API extraction Â· Sitemap discovery
 </p>
 
 <p align="center">
@@ -31,49 +31,49 @@
 
 ---
 
-## v2.0.0 ¡ª Major Upgrade
+## v2.0.0 â€” Major Upgrade
 
-v1 adalah reliability layer. v2 adalah itu plus toolkit lengkap buat ngehandle masalah-masalah yang baru muncul setelah scraper lo jalan lama: session/login, IP block, rate limit, dan ekstraksi dari JSON API (bukan cuma HTML). Semua ditambahin **tanpa nambah dependency baru** ¡ª masih cuma `cheerio`.
+v1 adalah reliability layer. v2 adalah itu plus toolkit lengkap buat ngehandle masalah-masalah yang baru muncul setelah scraper lo jalan lama: session/login, IP block, rate limit, dan ekstraksi dari JSON API (bukan cuma HTML). Semua ditambahin **tanpa nambah dependency baru** â€” masih cuma `cheerio`.
 
 | Fitur | v1.0.0 | v2.0.0 |
 |---|---|---|
-| Schema Validator | 7¼3 | 7¼3 |
-| Selector Health Monitor | 7¼3 | 7¼3 |
-| Smart Retry (adaptive backoff + jitter) | 7¼3 | 7¼3 + never retries canceled requests |
-| Request Fingerprint Randomizer | 7¼3 | 7¼3 |
-| Diff Detector | 7¼3 | 7¼3 |
-| Smart Cache (TTL, memory/disk) | 7Ã4 | 7¼3 **BARU** |
-| Cookie Jar + Session Login | 7Ã4 | 7¼3 **BARU** |
-| Proxy Rotation (round-robin/random/sticky + health tracking) | 7Ã4 | 7¼3 **BARU** |
-| Per-domain Rate Limiter | 7Ã4 | 7¼3 **BARU** |
-| Interceptors (request/response middleware) | 7Ã4 | 7¼3 **BARU** |
-| Cancel Request (AbortController) | 7Ã4 | 7¼3 **BARU** |
-| TimeoutError vs CanceledError (distinct classes) | 7Ã4 | 7¼3 **BARU** |
-| JSON API Extraction (schema-based, bukan cuma HTML) | 7Ã4 | 7¼3 **BARU** |
-| Auto-detect HTML vs JSON response | 7Ã4 | 7¼3 **BARU** |
-| Sitemap + robots.txt Discovery | 7Ã4 | 7¼3 **BARU** |
-| Multi-format Export (csv/json/ndjson/markdown) | 7Ã4 | 7¼3 **BARU** |
-| Webhook Notifications | 7Ã4 | 7¼3 **BARU** |
-| baseURL + auto query params | 7Ã4 | 7¼3 **BARU** |
-| rejectUnauthorized override (self-signed/dev cert) | 7Ã4 | 7¼3 **BARU** |
-| Local test suite (zero network dependency) | 7Ã4 | 7¼3 **BARU**, 78 test |
+| Schema Validator | âœ… | âœ… |
+| Selector Health Monitor | âœ… | âœ… |
+| Smart Retry (adaptive backoff + jitter) | âœ… | âœ… + never retries canceled requests |
+| Request Fingerprint Randomizer | âœ… | âœ… |
+| Diff Detector | âœ… | âœ… |
+| Smart Cache (TTL, memory/disk) | âŒ | âœ… **BARU** |
+| Cookie Jar + Session Login | âŒ | âœ… **BARU** |
+| Proxy Rotation (round-robin/random/sticky + health tracking) | âŒ | âœ… **BARU** |
+| Per-domain Rate Limiter | âŒ | âœ… **BARU** |
+| Interceptors (request/response middleware) | âŒ | âœ… **BARU** |
+| Cancel Request (AbortController) | âŒ | âœ… **BARU** |
+| TimeoutError vs CanceledError (distinct classes) | âŒ | âœ… **BARU** |
+| JSON API Extraction (schema-based, bukan cuma HTML) | âŒ | âœ… **BARU** |
+| Auto-detect HTML vs JSON response | âŒ | âœ… **BARU** |
+| Sitemap + robots.txt Discovery | âŒ | âœ… **BARU** |
+| Multi-format Export (csv/json/ndjson/markdown) | âŒ | âœ… **BARU** |
+| Webhook Notifications | âŒ | âœ… **BARU** |
+| baseURL + auto query params | âŒ | âœ… **BARU** |
+| rejectUnauthorized override (self-signed/dev cert) | âŒ | âœ… **BARU** |
+| Local test suite (zero network dependency) | âŒ | âœ… **BARU**, 78 test |
 | Dependencies | 1 (cheerio) | 1 (cheerio) |
 
 ---
 
 ## Kenapa sengkrep-ryna?
 
-Library scraping biasanya fokus ke *gimana cara ambil data*. `sengkrep-ryna` fokus ke masalah yang datang setelah itu ¡ª dan sekarang juga ke masalah yang datang **sebelum** itu (akses, sesi, IP block).
+Library scraping biasanya fokus ke *gimana cara ambil data*. `sengkrep-ryna` fokus ke masalah yang datang setelah itu â€” dan sekarang juga ke masalah yang datang **sebelum** itu (akses, sesi, IP block).
 
 Masalah nyata yang sering terjadi:
 
-- Selector berubah diam-diam karena website deploy ulang ¡ª nggak ada yang alert
+- Selector berubah diam-diam karena website deploy ulang â€” nggak ada yang alert
 - Data yang dihasilkan pass validation tapi strukturnya sudah beda dari kemarin
 - Rate limit kena, scraper mati, dan retry langsung hammer server makin cepat
-- Request pattern terlalu robotic ¡ª UA sama, header urutan sama, timing sama ¡ª langsung diblokir
+- Request pattern terlalu robotic â€” UA sama, header urutan sama, timing sama â€” langsung diblokir
 - Situs butuh login dulu sebelum data bisa diakses, dan session-nya hilang tiap request baru
 - Satu IP kena ban permanen karena nggak ada rotasi
-- Banyak situs modern nggak render data di HTML ¡ª data-nya datang dari endpoint JSON internal yang dipanggil via `fetch()`/XHR di belakang layar
+- Banyak situs modern nggak render data di HTML â€” data-nya datang dari endpoint JSON internal yang dipanggil via `fetch()`/XHR di belakang layar
 - Refetch URL yang sama berkali-kali padahal datanya belum berubah, buang-buang quota & waktu
 
 `sengkrep-ryna` hadir sebagai lapisan yang lo **wrapper** di atas scraper lo yang sudah ada, atau pakai langsung sebagai scraper lengkap.
@@ -131,40 +131,40 @@ console.log(data);
 
 Table of Contents
 
-¡¤ Core API
-  ¡¤ sengkrep(url, schema, options)
-  ¡¤ sengkrep.create(options)
-  ¡¤ scraper.extract(url, schema, options)
-  ¡¤ scraper.batch(urls, schema, options)
-  ¡¤ scraper.paginate(startUrl, config, schema, options)
-  ¡¤ scraper.login(url, formData, options)
-  ¡¤ scraper.discover(origin, options)
-  ¡¤ scraper.export(input, schema, options)
-¡¤ Schema Syntax
-  ¡¤ HTML Schema
-  ¡¤ JSON Schema
-¡¤ Modules
-  ¡¤ Schema Validator
-  ¡¤ Selector Health Monitor
-  ¡¤ Smart Retry
-  ¡¤ Request Fingerprint
-  ¡¤ Diff Detector
-  ¡¤ Smart Cache
-  ¡¤ Cookie Jar & Sessions
-  ¡¤ Proxy Rotation
-  ¡¤ Rate Limiter
-  ¡¤ Interceptors
-  ¡¤ Sitemap Discovery
-  ¡¤ Multi-format Export
-  ¡¤ Webhook Notifications
-¡¤ Configuration Reference
-¡¤ Error Handling
-¡¤ Accessing Meta (_ryna)
-¡¤ Testing
-¡¤ Examples
-¡¤ Architecture
-¡¤ Tips & Troubleshooting
-¡¤ License
+Â· Core API
+  Â· sengkrep(url, schema, options)
+  Â· sengkrep.create(options)
+  Â· scraper.extract(url, schema, options)
+  Â· scraper.batch(urls, schema, options)
+  Â· scraper.paginate(startUrl, config, schema, options)
+  Â· scraper.login(url, formData, options)
+  Â· scraper.discover(origin, options)
+  Â· scraper.export(input, schema, options)
+Â· Schema Syntax
+  Â· HTML Schema
+  Â· JSON Schema
+Â· Modules
+  Â· Schema Validator
+  Â· Selector Health Monitor
+  Â· Smart Retry
+  Â· Request Fingerprint
+  Â· Diff Detector
+  Â· Smart Cache
+  Â· Cookie Jar & Sessions
+  Â· Proxy Rotation
+  Â· Rate Limiter
+  Â· Interceptors
+  Â· Sitemap Discovery
+  Â· Multi-format Export
+  Â· Webhook Notifications
+Â· Configuration Reference
+Â· Error Handling
+Â· Accessing Meta (_ryna)
+Â· Testing
+Â· Examples
+Â· Architecture
+Â· Tips & Troubleshooting
+Â· License
 
 ---
 
@@ -232,7 +232,7 @@ const scraper = sengkrep.create({
 
   validate: {
     name:  { required: true, type: 'string', minLength: 2 },
-    price: { required: true, pattern: /^[0„5$¢ã][\d,.]+$/ },
+    price: { required: true, pattern: /^[Â£$â‚¬][\d,.]+$/ },
   },
 });
 
@@ -262,11 +262,11 @@ Options:
 Key Type Default Keterangan
 strict boolean false Throw ValidationError jika validasi gagal
 responseType 'auto' \| 'html' \| 'json' 'auto' Paksa mode ekstraksi, atau biarkan auto-detect dari Content-Type / body sniffing
-params object ¡ª Query params, di-merge ke URL otomatis
+params object â€” Query params, di-merge ke URL otomatis
 request.headers object {} Header tambahan untuk request
 request.method string 'GET' HTTP method
-request.body string ¡ª Request body (untuk POST/PUT)
-request.signal AbortSignal ¡ª Untuk cancel request di tengah jalan
+request.body string â€” Request body (untuk POST/PUT)
+request.signal AbortSignal â€” Untuk cancel request di tengah jalan
 request.rejectUnauthorized boolean true Set false untuk terima self-signed cert (dev/internal only)
 
 ---
@@ -307,10 +307,10 @@ const items = await scraper.paginate(
 ```
 
 Key Type Default Keterangan
-nextSelector string ¡ª Required. Selector link halaman berikutnya
+nextSelector string â€” Required. Selector link halaman berikutnya
 itemsSelector string null Selector container per item. Kosong = seluruh halaman jadi satu object
 maxPages number 10 Batas maksimal halaman
-delayBetweenPages number 1200 Jeda antar halaman (ms), di-jitter ¡À20%
+delayBetweenPages number 1200 Jeda antar halaman (ms), di-jitter Â±20%
 
 ---
 
@@ -331,13 +331,13 @@ if (ok) {
 }
 ```
 
-Return: boolean ¡ª true kalau status response < 400.
+Return: boolean â€” true kalau status response < 400.
 
 ---
 
 scraper.discover(origin, options) {#scraperdiscover}
 
-Temukan semua URL dari sebuah situs lewat robots.txt ¡ú Sitemap: ¡ú sitemap.xml (termasuk sitemap index bertingkat).
+Temukan semua URL dari sebuah situs lewat robots.txt â†’ Sitemap: â†’ sitemap.xml (termasuk sitemap index bertingkat).
 
 ```js
 const urls = await scraper.discover('https://example.com', {
@@ -358,7 +358,7 @@ pattern RegExp null Filter URL yang masuk hasil akhir
 
 scraper.export(input, schema, options) {#scraperexport}
 
-Scrape lalu langsung export ke file ¡ª atau kalau input sudah berupa data hasil ekstraksi, langsung diserialisasi tanpa scrape ulang.
+Scrape lalu langsung export ke file â€” atau kalau input sudah berupa data hasil ekstraksi, langsung diserialisasi tanpa scrape ulang.
 
 ```js
 await scraper.export('https://example.com/product/1', schema, {
@@ -419,7 +419,7 @@ const full = {
   price: {
     selector: '.price-tag',
     required: true,
-    pattern:  /^[0„5$¢ã][\d,.]+$/,
+    pattern:  /^[Â£$â‚¬][\d,.]+$/,
   },
   images: {
     selector: 'img.gallery-photo',
@@ -472,7 +472,7 @@ Path syntax:
 Sintaks Arti
 a.b.c Akses object key bersarang
 a.b[0].c Akses index array tertentu
-a.b[].c Wildcard ¡ª map ke semua elemen array, hasil jadi array
+a.b[].c Wildcard â€” map ke semua elemen array, hasil jadi array
 a.b[][0] Kombinasi: untuk setiap elemen array b, ambil index 0-nya
 
 Field dengan wildcard ([]) otomatis mengembalikan array. Field tanpa wildcard mengembalikan single value (elemen pertama yang ditemukan).
@@ -489,7 +489,7 @@ Schema Validator
 const scraper = sengkrep.create({
   validate: {
     name:   { required: true, type: 'string', minLength: 3, maxLength: 200 },
-    price:  { required: true, pattern: /^[0„5$¢ã][\d,.]+$/ },
+    price:  { required: true, pattern: /^[Â£$â‚¬][\d,.]+$/ },
     rating: { type: 'number', custom: (val) => (val >= 0 && val <= 5) ? true : 'Rating harus antara 0 dan 5' },
     tags:   { minItems: 1 },
     url:    { type: 'url' },
@@ -551,13 +551,13 @@ const scraper = sengkrep.create({
 Delay strategy per status code:
 
 Status Base Delay Multiplier Max Delay
-429 5000ms ¡Á2.0 120s
-403 8000ms ¡Á2.0 60s
-503 3000ms ¡Á1.5 30s
-502, 504 2000ms ¡Á1.5 20s
-500 1500ms ¡Á1.5 15s
-408 1000ms ¡Á1.2 10s
-Default 1000ms ¡Á1.5 15s
+429 5000ms Ã—2.0 120s
+403 8000ms Ã—2.0 60s
+503 3000ms Ã—1.5 30s
+502, 504 2000ms Ã—1.5 20s
+500 1500ms Ã—1.5 15s
+408 1000ms Ã—1.2 10s
+Default 1000ms Ã—1.5 15s
 
 Setiap delay dikali faktor jitter random. Request yang di-cancel lewat AbortSignal (CanceledError) tidak pernah di-retry, apapun konfigurasinya.
 
@@ -585,7 +585,7 @@ Accept-Language Rotasi dari 6 kombinasi bahasa
 Accept-Encoding Variasi gzip,deflate,br
 Sec-CH-UA / Sec-CH-UA-Platform Auto-generate sesuai UA terpilih
 Header order Shuffle pakai Fisher-Yates
-Timing Jitter ¡À30% dari base delay
+Timing Jitter Â±30% dari base delay
 
 ---
 
@@ -604,14 +604,14 @@ const scraper = sengkrep.create({
 ```
 
 Change type Severity Keterangan
-type_changed ”9è2 critical Tipe data berubah (object ¡ú array)
-keys_removed ”9è2 critical Key yang sebelumnya ada sekarang hilang
-item_schema_changed ”9è2 critical Keys dalam array item berubah
-fields_became_null •0®7 warn Field yang sebelumnya ada data kini null
-count_changed •0®7 warn Jumlah item array berubah drastis (¡İ50%)
-keys_added •0®8 info Key baru muncul
-fields_recovered •0®8 info Field yang sebelumnya null kini ada data
-value_changed •0®8 info Nilai berubah (hanya saat sensitivity: 'value')
+type_changed ğŸ”´ critical Tipe data berubah (object â†’ array)
+keys_removed ğŸ”´ critical Key yang sebelumnya ada sekarang hilang
+item_schema_changed ğŸ”´ critical Keys dalam array item berubah
+fields_became_null ğŸŸ¡ warn Field yang sebelumnya ada data kini null
+count_changed ğŸŸ¡ warn Jumlah item array berubah drastis (â‰¥50%)
+keys_added ğŸŸ¢ info Key baru muncul
+fields_recovered ğŸŸ¢ info Field yang sebelumnya null kini ada data
+value_changed ğŸŸ¢ info Nilai berubah (hanya saat sensitivity: 'value')
 
 API manual: scraper.diff.clearSnapshot(url), .clearAll().
 
@@ -619,7 +619,7 @@ API manual: scraper.diff.clearSnapshot(url), .clearAll().
 
 Smart Cache
 
-TTL-based cache di level HTTP response ¡ª skip network kalau masih fresh, tapi tetap jalanin extraction/health/diff/validation di setiap call (jadi metadata tetap akurat).
+TTL-based cache di level HTTP response â€” skip network kalau masih fresh, tapi tetap jalanin extraction/health/diff/validation di setiap call (jadi metadata tetap akurat).
 
 ```js
 const scraper = sengkrep.create({
@@ -643,13 +643,13 @@ storage 'memory' \| 'disk' 'memory' disk persist lintas restart proses
 storageDir string .sengkrep-ryna-cache Lokasi penyimpanan kalau storage: 'disk'
 maxItems number 1000 Batas entry di memory (LRU-ish eviction)
 
-API manual: scraper.cache.stats() ¡ú { hits, misses, sets, size, hitRate }.
+API manual: scraper.cache.stats() â†’ { hits, misses, sets, size, hitRate }.
 
 ---
 
 Cookie Jar & Sessions
 
-Aktif secara default (cookies: true). Cookie dari Set-Cookie otomatis ditangkap dan dikirim ulang ke request berikutnya yang ke domain yang sama ¡ª termasuk subdomain.
+Aktif secara default (cookies: true). Cookie dari Set-Cookie otomatis ditangkap dan dikirim ulang ke request berikutnya yang ke domain yang sama â€” termasuk subdomain.
 
 ```js
 const scraper = sengkrep.create({ cookies: true });
@@ -660,13 +660,13 @@ const dashboard = await scraper.extract('https://example.com/dashboard', schema)
 
 Matiin kalau nggak perlu (request jadi sedikit lebih cepat): sengkrep.create({ cookies: false }).
 
-API manual: scraper.cookieJar.getAll(hostname), .export(), .import(snapshot), .clear(hostname?) ¡ª export()/import() berguna buat nyimpen session ke disk antar proses.
+API manual: scraper.cookieJar.getAll(hostname), .export(), .import(snapshot), .clear(hostname?) â€” export()/import() berguna buat nyimpen session ke disk antar proses.
 
 ---
 
 Proxy Rotation
 
-CONNECT tunnel buat HTTPS dan forward proxy buat HTTP ¡ª keduanya diimplementasi native pakai net/tls/http/https, tanpa dependency tambahan kayak https-proxy-agent.
+CONNECT tunnel buat HTTPS dan forward proxy buat HTTP â€” keduanya diimplementasi native pakai net/tls/http/https, tanpa dependency tambahan kayak https-proxy-agent.
 
 ```js
 const scraper = sengkrep.create({
@@ -687,7 +687,7 @@ sticky Domain yang sama selalu dapet proxy yang sama (konsisten per-site)
 
 Proxy yang gagal berturut-turut (proxyMaxFailures, default 3) otomatis ditandai unhealthy dan dihindari sampai proxy lain juga gagal. Sukses me-reset hitungan failure-nya.
 
-API manual: scraper.proxyRotator.stats() ¡ú [{ proxy, failures, healthy }].
+API manual: scraper.proxyRotator.stats() â†’ [{ proxy, failures, healthy }].
 
 ---
 
@@ -714,12 +714,12 @@ Kombinasi keduanya bisa dipakai sekaligus. Default: disabled (undefined/null, ng
 
 Interceptors
 
-Axios-style middleware, selalu tersedia di scraper.interceptors ¡ª nggak perlu config khusus buat enable.
+Axios-style middleware, selalu tersedia di scraper.interceptors â€” nggak perlu config khusus buat enable.
 
 ```js
 scraper.interceptors.request.use((config) => {
   config.headers['X-Custom-Header'] = 'my-value';
-  console.log(`7Ë9„1‚5 Request ke: ${config.url}`);
+  console.log(`â¡ï¸ Request ke: ${config.url}`);
   return config;
 });
 
@@ -728,14 +728,14 @@ scraper.interceptors.response.use((response) => {
   return response;
 }, (error) => {
   if (error.status === 404) {
-    console.log('7²2„1‚5 Page not found, skipping...');
+    console.log('âš ï¸ Page not found, skipping...');
     return { status: 404, body: '', headers: {}, skipped: true };
   }
   throw error;
 });
 ```
 
-request.use(onFulfilled) jalan sebelum request dikirim ¡ª terima dan return objek { url, method, headers, body, proxy, signal, timeout }.
+request.use(onFulfilled) jalan sebelum request dikirim â€” terima dan return objek { url, method, headers, body, proxy, signal, timeout }.
 
 response.use(onFulfilled, onRejected) jalan setelah response diterima (atau gagal). onRejected bisa recover dari error dengan return value baru (bukan throw), persis kayak contoh 404-skip di atas.
 
@@ -752,7 +752,7 @@ const urls = await scraper.discover('https://example.com', {
 });
 ```
 
-Alurnya: fetch robots.txt ¡ú cari baris Sitemap: ¡ú kalau nggak ketemu, fallback ke /sitemap.xml ¡ú parse <urlset> atau <sitemapindex> (rekursif sampai maxDepth) ¡ú kumpulin semua <loc>.
+Alurnya: fetch robots.txt â†’ cari baris Sitemap: â†’ kalau nggak ketemu, fallback ke /sitemap.xml â†’ parse <urlset> atau <sitemapindex> (rekursif sampai maxDepth) â†’ kumpulin semua <loc>.
 
 ---
 
@@ -898,7 +898,7 @@ try {
 FetchError codes:
 
 Code Keterangan
-HTTP_ERROR Server return status ¡İ 400
+HTTP_ERROR Server return status â‰¥ 400
 NETWORK_ERROR Koneksi gagal
 TIMEOUT Request melebihi timeout (TimeoutError)
 CANCELED Dibatalkan lewat AbortSignal (CanceledError)
@@ -911,7 +911,7 @@ DECOMPRESS_ERROR Gagal decompress response body
 
 Accessing Meta (_ryna)
 
-Hasil semua modul tersimpan di property _ryna yang non-enumerable ¡ª tidak muncul saat console.log/JSON.stringify, tapi bisa diakses langsung.
+Hasil semua modul tersimpan di property _ryna yang non-enumerable â€” tidak muncul saat console.log/JSON.stringify, tapi bisa diakses langsung.
 
 ```js
 const data = await scraper.extract(url, schema);
@@ -932,15 +932,15 @@ meta.validation?.warnings;
 
 Testing
 
-Library ini punya test suite sendiri (78 test) yang jalan 100% lokal ¡ª nggak butuh akses internet sama sekali. Cocok dites di Termux/CI/offline.
+Library ini punya test suite sendiri (78 test) yang jalan 100% lokal â€” nggak butuh akses internet sama sekali. Cocok dites di Termux/CI/offline.
 
 ```bash
 npm test
 ```
 
-Yang dites: HTTP fetch (redirect, gzip, timeout, abort), proxy CONNECT tunnel via local forward-proxy + self-signed HTTPS server, cookie roundtrip, retry backoff terhadap endpoint yang sengaja dibikin flaky, cache TTL/eviction, rate limiter timing, proxy rotator strategy, JSON path extraction, schema validation, health monitor alerting, diff detection, fingerprint randomization, webhook delivery, dan export ke semua format ¡ª plus integration test end-to-end lewat Ryna.extract/batch/paginate/login/discover/export.
+Yang dites: HTTP fetch (redirect, gzip, timeout, abort), proxy CONNECT tunnel via local forward-proxy + self-signed HTTPS server, cookie roundtrip, retry backoff terhadap endpoint yang sengaja dibikin flaky, cache TTL/eviction, rate limiter timing, proxy rotator strategy, JSON path extraction, schema validation, health monitor alerting, diff detection, fingerprint randomization, webhook delivery, dan export ke semua format â€” plus integration test end-to-end lewat Ryna.extract/batch/paginate/login/discover/export.
 
-Kalau openssl nggak ketemu di environment lo, test yang butuh HTTPS-via-proxy otomatis di-skip (bukan fail) ¡ª sisanya tetap jalan penuh.
+Kalau openssl nggak ketemu di environment lo, test yang butuh HTTPS-via-proxy otomatis di-skip (bukan fail) â€” sisanya tetap jalan penuh.
 
 ---
 
@@ -1096,79 +1096,79 @@ Architecture
 
 ```
 sengkrep-ryna/
-©À©¤©¤ index.js                    Entry point + convenience API
-©À©¤©¤ example.js                  Runnable quick-start demo
-©À©¤©¤ test/
-©¦   ©À©¤©¤ server.js                Local HTTP/HTTPS/proxy fixtures (zero external network)
-©¦   ©À©¤©¤ run.js                   Unit tests ¡ª module-level
-©¦   ©¸©¤©¤ integration.js           Integration tests ¡ª full Ryna orchestration
-©¸©¤©¤ src/
-    ©À©¤©¤ Ryna.js                  Orchestrator utama
-    ©À©¤©¤ core/
-    ©¦   ©À©¤©¤ Fetcher.js            HTTP client (proxy, cookies, abort, interceptors, decompress)
-    ©¦   ©À©¤©¤ ProxyTunnel.js        CONNECT tunnel native (zero dependency)
-    ©¦   ©À©¤©¤ Extractor.js          HTML extraction engine (cheerio)
-    ©¦   ©À©¤©¤ JsonExtractor.js      JSON path extraction engine
-    ©¦   ©¸©¤©¤ Retry.js              Adaptive retry per-status strategy
-    ©¸©¤©¤ modules/
-        ©À©¤©¤ Fingerprint.js        UA rotation, header randomization, timing jitter
-        ©À©¤©¤ SchemaValidator.js    Validasi data hasil ekstraksi
-        ©À©¤©¤ HealthMonitor.js      Selector health tracking
-        ©À©¤©¤ DiffDetector.js       Structural diff detection
-        ©À©¤©¤ Cache.js              TTL response cache
-        ©À©¤©¤ CookieJar.js          Session/cookie persistence
-        ©À©¤©¤ ProxyRotator.js       Proxy pool strategy + health tracking
-        ©À©¤©¤ RateLimiter.js        Per-hostname token bucket
-        ©À©¤©¤ Interceptors.js       Request/response middleware chain
-        ©À©¤©¤ Discover.js           Sitemap + robots.txt crawler
-        ©¸©¤©¤ Webhook.js            Lifecycle event notifier
-    ©¸©¤©¤ utils/
-        ©À©¤©¤ logger.js              Colored leveled logger
-        ©À©¤©¤ storage.js             JSON file storage (DiffDetector + disk Cache)
-        ©¸©¤©¤ exporter.js            CSV/JSON/NDJSON/Markdown writers
+â”œâ”€â”€ index.js                    Entry point + convenience API
+â”œâ”€â”€ example.js                  Runnable quick-start demo
+â”œâ”€â”€ test/
+â”‚   â”œâ”€â”€ server.js                Local HTTP/HTTPS/proxy fixtures (zero external network)
+â”‚   â”œâ”€â”€ run.js                   Unit tests â€” module-level
+â”‚   â””â”€â”€ integration.js           Integration tests â€” full Ryna orchestration
+â””â”€â”€ src/
+    â”œâ”€â”€ Ryna.js                  Orchestrator utama
+    â”œâ”€â”€ core/
+    â”‚   â”œâ”€â”€ Fetcher.js            HTTP client (proxy, cookies, abort, interceptors, decompress)
+    â”‚   â”œâ”€â”€ ProxyTunnel.js        CONNECT tunnel native (zero dependency)
+    â”‚   â”œâ”€â”€ Extractor.js          HTML extraction engine (cheerio)
+    â”‚   â”œâ”€â”€ JsonExtractor.js      JSON path extraction engine
+    â”‚   â””â”€â”€ Retry.js              Adaptive retry per-status strategy
+    â””â”€â”€ modules/
+        â”œâ”€â”€ Fingerprint.js        UA rotation, header randomization, timing jitter
+        â”œâ”€â”€ SchemaValidator.js    Validasi data hasil ekstraksi
+        â”œâ”€â”€ HealthMonitor.js      Selector health tracking
+        â”œâ”€â”€ DiffDetector.js       Structural diff detection
+        â”œâ”€â”€ Cache.js              TTL response cache
+        â”œâ”€â”€ CookieJar.js          Session/cookie persistence
+        â”œâ”€â”€ ProxyRotator.js       Proxy pool strategy + health tracking
+        â”œâ”€â”€ RateLimiter.js        Per-hostname token bucket
+        â”œâ”€â”€ Interceptors.js       Request/response middleware chain
+        â”œâ”€â”€ Discover.js           Sitemap + robots.txt crawler
+        â””â”€â”€ Webhook.js            Lifecycle event notifier
+    â””â”€â”€ utils/
+        â”œâ”€â”€ logger.js              Colored leveled logger
+        â”œâ”€â”€ storage.js             JSON file storage (DiffDetector + disk Cache)
+        â””â”€â”€ exporter.js            CSV/JSON/NDJSON/Markdown writers
 ```
 
 Request flow:
 
 ```
 scraper.extract(url, schema)
-  ©¸©¤©¤ _resolveUrl (baseURL) + _applyParams (query string)
-  ©¸©¤©¤ Cache.get() ¡ú HIT? return cached response
-  ©¸©¤©¤ Retry.run()
-      ©¸©¤©¤ RateLimiter.acquire(hostname)
-      ©¸©¤©¤ ProxyRotator.next(hostname)
-      ©¸©¤©¤ Fetcher.fetch()
-          ©¸©¤©¤ Interceptors.request.run(config)
-          ©¸©¤©¤ Fingerprint.buildHeaders()
-          ©¸©¤©¤ CookieJar.getCookieHeader() / setFromHeaders()
-          ©¸©¤©¤ ProxyTunnel (CONNECT for https, forward route for http)
-          ©¸©¤©¤ Decompress response (gzip/br/deflate)
-          ©¸©¤©¤ Interceptors.response.run(raw) / runError(err)
-  ©¸©¤©¤ Cache.set()
-  ©¸©¤©¤ _looksLikeJson() ¡ú Extractor (cheerio) atau JsonExtractor (path)
-  ©¸©¤©¤ HealthMonitor.record()
-  ©¸©¤©¤ DiffDetector.check()
-  ©¸©¤©¤ SchemaValidator.validate()
-  ©¸©¤©¤ Webhook.fire('onComplete' | 'onError')
-  ©¸©¤©¤ Return { ...data, _ryna: { cache, responseType, health, diff, validation } }
+  â””â”€â”€ _resolveUrl (baseURL) + _applyParams (query string)
+  â””â”€â”€ Cache.get() â†’ HIT? return cached response
+  â””â”€â”€ Retry.run()
+      â””â”€â”€ RateLimiter.acquire(hostname)
+      â””â”€â”€ ProxyRotator.next(hostname)
+      â””â”€â”€ Fetcher.fetch()
+          â””â”€â”€ Interceptors.request.run(config)
+          â””â”€â”€ Fingerprint.buildHeaders()
+          â””â”€â”€ CookieJar.getCookieHeader() / setFromHeaders()
+          â””â”€â”€ ProxyTunnel (CONNECT for https, forward route for http)
+          â””â”€â”€ Decompress response (gzip/br/deflate)
+          â””â”€â”€ Interceptors.response.run(raw) / runError(err)
+  â””â”€â”€ Cache.set()
+  â””â”€â”€ _looksLikeJson() â†’ Extractor (cheerio) atau JsonExtractor (path)
+  â””â”€â”€ HealthMonitor.record()
+  â””â”€â”€ DiffDetector.check()
+  â””â”€â”€ SchemaValidator.validate()
+  â””â”€â”€ Webhook.fire('onComplete' | 'onError')
+  â””â”€â”€ Return { ...data, _ryna: { cache, responseType, health, diff, validation } }
 ```
 
 ---
 
 Tips & Troubleshooting
 
-Selector return null padahal di browser ada datanya ¡ª kemungkinan besar situsnya render via JavaScript (client-side rendering). sengkrep-ryna cuma parsing HTML mentah, nggak menjalankan JS. Cek view-source: di browser; kalau datanya nggak ada di situ, coba cari endpoint JSON internal-nya lewat tab Network di DevTools dan pakai responseType: 'json' dengan JsonExtractor ¡ª biasanya lebih stabil daripada scraping HTML yang di-render JS sekalipun pakai headless browser.
+Selector return null padahal di browser ada datanya â€” kemungkinan besar situsnya render via JavaScript (client-side rendering). sengkrep-ryna cuma parsing HTML mentah, nggak menjalankan JS. Cek view-source: di browser; kalau datanya nggak ada di situ, coba cari endpoint JSON internal-nya lewat tab Network di DevTools dan pakai responseType: 'json' dengan JsonExtractor â€” biasanya lebih stabil daripada scraping HTML yang di-render JS sekalipun pakai headless browser.
 
-Proxy auth gagal terus ¡ª format URL proxy yang didukung: http://user:pass@host:port. Pastikan username/password di-encodeURIComponent kalau mengandung karakter spesial (@, :, /).
+Proxy auth gagal terus â€” format URL proxy yang didukung: http://user:pass@host:port. Pastikan username/password di-encodeURIComponent kalau mengandung karakter spesial (@, :, /).
 
-rejectUnauthorized: false itu buat apa ¡ª cuma buat proxy/target dengan self-signed certificate (internal tools, dev environment). Jangan dipakai ke situs publik di production, itu menghilangkan validasi certificate sepenuhnya.
+rejectUnauthorized: false itu buat apa â€” cuma buat proxy/target dengan self-signed certificate (internal tools, dev environment). Jangan dipakai ke situs publik di production, itu menghilangkan validasi certificate sepenuhnya.
 
-Cache nggak ke-invalidate pas saya butuh data fresh ¡ª panggil scraper.cache.delete(url) atau scraper.cache.clear() sebelum extract, atau set ttl lebih pendek untuk data yang sering berubah.
+Cache nggak ke-invalidate pas saya butuh data fresh â€” panggil scraper.cache.delete(url) atau scraper.cache.clear() sebelum extract, atau set ttl lebih pendek untuk data yang sering berubah.
 
-Health monitor / diff detector kelihatan "noisy" di awal ¡ª wajar, butuh beberapa run dulu (windowSize) buat punya baseline yang reliable. First run selalu firstRun: true tanpa alert.
+Health monitor / diff detector kelihatan "noisy" di awal â€” wajar, butuh beberapa run dulu (windowSize) buat punya baseline yang reliable. First run selalu firstRun: true tanpa alert.
 
 ---
 
 License
 
-MIT 0„8 rynaqrtz
+MIT Â© rynaqrtz
