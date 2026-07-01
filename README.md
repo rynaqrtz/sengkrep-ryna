@@ -13,10 +13,9 @@ Schema validation · Selector health monitor · Smart retry · Fingerprint rando
 Smart cache · Cookie sessions · Proxy rotation · Rate limiter · Interceptors · JSON API extraction · Sitemap discovery</p>
 
 [![npm version](https://img.shields.io/npm/v/sengkrep-ryna?color=black&style=flat-square)](https://www.npmjs.com/package/sengkrep-ryna)
-[![license](https://img.shields.io/npm/l/sengkrep-ryna?color=black&style=flat-square)](./LICENSE)
 [![node](https://img.shields.io/node/v/sengkrep-ryna?color=black&style=flat-square)](https://nodejs.org)
-[![dependencies](https://img.shields.io/badge/dependencies-1-black?style=flat-square)](./package.json)
-[![tests](https://img.shields.io/badge/tests-78%20passing-black?style=flat-square)](./test)
+[![dependencies](https://img.shields.io/badge/dependencies-1-black?style=flat-square)](https://www.npmjs.com/package/sengkrep-ryna?activeTab=dependencies)
+[![tests](https://img.shields.io/badge/tests-78%20passing-black?style=flat-square)](https://www.npmjs.com/package/sengkrep-ryna)
 
 </div>
 
