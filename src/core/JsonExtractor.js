@@ -94,28 +94,46 @@ class JsonExtractor {
     const health = {};
 
     for (const [key, def] of Object.entries(defs)) {
-      const tokens   = tokenize(def.path);
-      const wildcard = hasWildcard(tokens);
-      const resolved = resolvePath(root, tokens);
+      const paths = Array.isArray(def.path) ? def.path : [def.path];
 
-      let value = wildcard ? resolved.filter(v => v !== undefined) : resolved[0];
-      if (value === undefined) value = null;
+      let value        = null;
+      let usedPath      = null;
+      let wildcardUsed   = false;
 
-      if (value && def.transform) {
-        value = wildcard ? value.map(def.transform) : def.transform(value);
+      for (const path of paths) {
+        const tokens   = tokenize(path);
+        const wildcard = hasWildcard(tokens);
+        const resolved = resolvePath(root, tokens);
+
+        let candidate = wildcard ? resolved.filter(v => v !== undefined) : resolved[0];
+        if (candidate === undefined) candidate = null;
+
+        const candidateEmpty = candidate === null || (Array.isArray(candidate) && candidate.length === 0);
+        if (!candidateEmpty) {
+          value       = candidate;
+          usedPath    = path;
+          wildcardUsed = wildcard;
+          break;
+        }
+      }
+
+      if (value !== null && def.transform) {
+        value = wildcardUsed ? value.map(def.transform) : def.transform(value);
       }
 
       const isEmpty = value === null || value === undefined || (Array.isArray(value) && value.length === 0);
 
       health[key] = {
-        selector: def.path,
-        empty:    isEmpty,
-        count:    Array.isArray(value) ? value.length : (isEmpty ? 0 : 1),
+        selector:      usedPath ?? paths[0],
+        pathsTried:    paths.length > 1 ? paths : undefined,
+        empty:         isEmpty,
+        count:         Array.isArray(value) ? value.length : (isEmpty ? 0 : 1),
       };
 
       if (isEmpty) {
         if (def.required) {
-          throw new JsonExtractionError(`Required field "${key}" not found at path "${def.path}"`, key, def.path);
+          const attempted = paths.length > 1 ? paths.map(p => `"${p}"`).join(', ') : `"${paths[0]}"`;
+          throw new JsonExtractionError(`Required field "${key}" not found (tried path${paths.length > 1 ? 's' : ''}: ${attempted})`, key, paths[0]);
         }
         data[key] = def.default;
         continue;

@@ -139,6 +139,176 @@ function handler(req, res) {
     return res.end('<div class="card" data-id="3"><span class="t">Item Three</span></div>');
   }
 
+  if (url.pathname === '/etag') {
+    const currentEtag = '"v1-etag-abc"';
+    if (req.headers['if-none-match'] === currentEtag) {
+      res.writeHead(304, { ETag: currentEtag });
+      return res.end();
+    }
+    res.writeHead(200, { ETag: currentEtag, 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ content: 'fresh data', version: 1 }));
+  }
+
+  if (url.pathname === '/protected') {
+    const auth = req.headers['authorization'];
+    if (auth !== 'Bearer valid-token') {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'unauthorized' }));
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ secret: 'top-data' }));
+  }
+
+  if (url.pathname === '/csrf-login') {
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      return res.end('<html><head><meta name="csrf-token" content="csrf-secret-xyz"></head><body><form><input type="hidden" name="_token" value="csrf-secret-xyz"></form></body></html>');
+    }
+    if (req.method === 'POST') {
+      const header = req.headers['x-csrf-token'];
+      if (header !== 'csrf-secret-xyz') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'csrf mismatch' }));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true }));
+    }
+  }
+
+  if (url.pathname === '/feed.xml') {
+    res.writeHead(200, { 'Content-Type': 'application/rss+xml' });
+    return res.end('<?xml version="1.0"?><rss version="2.0"><channel><title>Test Feed</title><item><title>Post One</title><link>http://127.0.0.1:9911/post-1</link><pubDate>Mon, 01 Jun 2026 00:00:00 GMT</pubDate><description>First post</description></item><item><title>Post Two</title><link>http://127.0.0.1:9911/post-2</link><pubDate>Tue, 02 Jun 2026 00:00:00 GMT</pubDate><description>Second post</description></item></channel></rss>');
+  }
+
+  if (url.pathname === '/data.csv') {
+    res.writeHead(200, { 'Content-Type': 'text/csv' });
+    return res.end('name,price\n"Buku A",50000\n"Buku B, edisi 2",75000\n');
+  }
+
+  if (url.pathname === '/wp-json/wp/v2/posts') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'X-WP-Total': '2', 'X-WP-TotalPages': '1' });
+    return res.end(JSON.stringify([{ id: 1, title: { rendered: 'Hello WP' } }, { id: 2, title: { rendered: 'World WP' } }]));
+  }
+
+  if (url.pathname === '/wp-admin/admin-ajax.php' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      const params = new URLSearchParams(body);
+      if (params.get('_ajax_nonce') !== 'wp-nonce-123') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ success: false, data: 'invalid nonce' }));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, data: { action: params.get('action') } }));
+    });
+    return;
+  }
+
+  if (url.pathname === '/wp-page') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><head><script>var ajax_object = {"ajax_url":"\\/wp-admin\\/admin-ajax.php","nonce":"wp-nonce-123"};</script></head><body>page</body></html>');
+  }
+
+  if (url.pathname === '/crawl-a') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Page A</h1><a href="/crawl-b">b</a><a href="/crawl-c">c</a></body></html>');
+  }
+
+  if (url.pathname === '/crawl-b') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Page B</h1><a href="/crawl-d">d</a></body></html>');
+  }
+
+  if (url.pathname === '/crawl-c') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Page C</h1></body></html>');
+  }
+
+  if (url.pathname === '/crawl-d') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Page D</h1></body></html>');
+  }
+
+  if (url.pathname === '/graphql' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      const parsed = JSON.parse(body);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (parsed.query && parsed.query.includes('__schema')) {
+        return res.end(JSON.stringify({ data: { __schema: { queryType: { name: 'Query' }, types: [{ name: 'Product', kind: 'OBJECT', fields: [{ name: 'id', type: { name: 'ID' } }, { name: 'title', type: { name: 'String' } }] }] } } }));
+      }
+      return res.end(JSON.stringify({ data: { products: { edges: [{ node: { id: '1', title: 'A' } }, { node: { id: '2', title: 'B' } }], pageInfo: { hasNextPage: false, endCursor: null } } } }));
+    });
+    return;
+  }
+
+  if (url.pathname === '/fallback-html') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><div class="new-title-class">Fallback Title</div><span class="price-v2">Rp99.000</span></body></html>');
+  }
+
+  if (url.pathname === '/paginated-widget') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Widget Page</h1><nav class="pagination"><a class="page-numbers" href="/p1">1</a><a class="page-numbers" href="/p2">2</a><a class="page-numbers" href="/p3">3</a><a class="next page-numbers" href="/p2">Next</a></nav></body></html>');
+  }
+
+  if (url.pathname === '/structured') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Sepatu Ryna","offers":{"@type":"Offer","price":"250000"}}</script><div itemscope itemtype="https://schema.org/Person"><span itemprop="name">Budi</span><span itemprop="jobTitle">Developer</span></div><div data-product-id="42" data-in-stock="true">card</div></body></html>');
+  }
+
+  if (url.pathname === '/binary-image') {
+    const png = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
+    res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+    return res.end(png);
+  }
+
+  if (url.pathname === '/shift-jis') {
+    const iconvBuf = Buffer.from('<html><body><h1>\x82\xb1\x82\xf1\x82\xc9\x82\xbf\x82\xcd</h1></body></html>', 'binary');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=Shift_JIS' });
+    return res.end(iconvBuf);
+  }
+
+  if (url.pathname === '/jsonp') {
+    res.writeHead(200, { 'Content-Type': 'application/javascript' });
+    return res.end('myCallback({"status":"ok","value":42});');
+  }
+
+  if (url.pathname === '/simple-form') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><form action="/simple-form-submit" method="POST"><input type="hidden" name="_token" value="form-tok-1"><input type="text" name="q" value="default"></form></body></html>');
+  }
+
+  if (url.pathname === '/simple-form-submit' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      const params = new URLSearchParams(body);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ q: params.get('q'), token: params.get('_token') }));
+    });
+    return;
+  }
+
+  if (url.pathname === '/large-file') {
+    res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+    const chunk = Buffer.alloc(1024 * 1024, 'a');
+    let sent = 0;
+    const total = 12 * 1024 * 1024;
+    const pump = () => {
+      while (sent < total) {
+        const ok = res.write(chunk);
+        sent += chunk.length;
+        if (!ok) { res.once('drain', pump); return; }
+      }
+      res.end();
+    };
+    pump();
+    return;
+  }
+
   res.writeHead(404);
   res.end('not found');
 }

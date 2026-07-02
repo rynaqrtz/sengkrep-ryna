@@ -70,11 +70,27 @@ class Fingerprint {
     };
   }
 
-  buildHeaders(extra = {}) {
+  _secFetchSite(context) {
+    if (!context || !context.referer) return 'none';
+    try {
+      const refUrl    = new URL(context.referer);
+      const targetUrl = new URL(context.targetUrl);
+      if (refUrl.origin === targetUrl.origin) return 'same-origin';
+
+      const refSite    = refUrl.hostname.split('.').slice(-2).join('.');
+      const targetSite = targetUrl.hostname.split('.').slice(-2).join('.');
+      return refSite === targetSite ? 'same-site' : 'cross-site';
+    } catch {
+      return 'none';
+    }
+  }
+
+  buildHeaders(extra = {}, context = null) {
     const ua      = this.getUA();
     const browser = this._detect(ua);
     const lang    = this._pick(ACCEPT_LANGUAGES);
     const enc     = this._pick(ACCEPT_ENCODINGS);
+    const site    = this._secFetchSite(context);
 
     const base = {
       'Accept':                    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -84,6 +100,8 @@ class Fingerprint {
       'Connection':                'keep-alive',
       'Upgrade-Insecure-Requests': '1',
     };
+
+    if (context?.referer) base['Referer'] = context.referer;
 
     if (Math.random() > 0.5) {
       base['Cache-Control'] = this._pick(['no-cache', 'max-age=0']);
@@ -98,16 +116,16 @@ class Fingerprint {
       base['Sec-CH-UA-Mobile']   = '?0';
       base['Sec-CH-UA-Platform'] = this._pick(PLATFORMS);
       base['Sec-Fetch-Dest']     = 'document';
-      base['Sec-Fetch-Mode']     = 'navigate';
-      base['Sec-Fetch-Site']     = 'none';
+      base['Sec-Fetch-Mode']     = site === 'none' ? 'navigate' : 'cors';
+      base['Sec-Fetch-Site']     = site;
       base['Sec-Fetch-User']     = '?1';
       if (Math.random() > 0.6) base['DNT'] = '1';
     }
 
     if (browser.isFirefox) {
       base['Sec-Fetch-Dest'] = 'document';
-      base['Sec-Fetch-Mode'] = 'navigate';
-      base['Sec-Fetch-Site'] = 'none';
+      base['Sec-Fetch-Mode'] = site === 'none' ? 'navigate' : 'cors';
+      base['Sec-Fetch-Site'] = site;
       base['Sec-Fetch-User'] = '?1';
       base['TE']             = 'trailers';
     }

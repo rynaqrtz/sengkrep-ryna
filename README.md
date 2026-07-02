@@ -8,158 +8,130 @@
 
 <h1>sengkrep-ryna</h1>
 
-<p align="center">
-  <strong>Scraping reliability layer untuk Node.js.</strong><br />
-  Schema validation · Selector health monitor · Smart retry · Fingerprint randomizer · Diff detector<br />
-  Smart cache · Cookie sessions · Proxy rotation · Rate limiter · Interceptors · JSON API extraction · Sitemap discovery
-</p>
+<p><strong>Production-grade reliability layer for Node.js scraping.</strong><br />
+Not an HTTP client. Not an HTML parser. Not a framework.<br />
+The middleware that keeps your scrapers <em>resilient</em>.</p>
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/sengkrep-ryna">
-    <img src="https://img.shields.io/npm/v/sengkrep-ryna?color=black&style=flat-square" alt="npm version">
-  </a>
-  <a href="https://nodejs.org">
-    <img src="https://img.shields.io/node/v/sengkrep-ryna?color=black&style=flat-square" alt="node version">
-  </a>
-  <a href="https://www.npmjs.com/package/sengkrep-ryna?activeTab=dependencies">
-    <img src="https://img.shields.io/badge/dependencies-1-black?style=flat-square" alt="dependencies">
-  </a>
-  <a href="https://www.npmjs.com/package/sengkrep-ryna">
-    <img src="https://img.shields.io/badge/tests-78%20passing-black?style=flat-square" alt="tests">
-  </a>
-</p>
+[![npm version](https://img.shields.io/npm/v/sengkrep-ryna?color=black&style=flat-square)](https://www.npmjs.com/package/sengkrep-ryna)
+[![license](https://img.shields.io/npm/l/sengkrep-ryna?color=black&style=flat-square)](./LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D18-black?style=flat-square)](https://nodejs.org)
+[![dependencies](https://img.shields.io/badge/dependencies-1-black?style=flat-square)](./package.json)
+[![tests](https://img.shields.io/badge/tests-189%20passing-black?style=flat-square)](./test)
+
+</div>
 
 ---
 
-## v2.0.0 — Major Upgrade
+## v3.1.0 — Fundamentals + AIO Update
 
-v1 adalah reliability layer. v2 adalah itu plus toolkit lengkap buat ngehandle masalah-masalah yang baru muncul setelah scraper lo jalan lama: session/login, IP block, rate limit, dan ekstraksi dari JSON API (bukan cuma HTML). Semua ditambahin **tanpa nambah dependency baru** — masih cuma `cheerio`.
+This release focuses on fixing core fundamentals (`fetch()`, `load()`, fallback selectors, accurate documentation) before adding new features. If you've tried previous versions and ran into "method not found" or "selector not flexible enough" issues — they're addressed here.
 
-| Fitur | v1.0.0 | v2.0.0 |
-|---|---|---|
-| Schema Validator | ✅ | ✅ |
-| Selector Health Monitor | ✅ | ✅ |
-| Smart Retry (adaptive backoff + jitter) | ✅ | ✅ + never retries canceled requests |
-| Request Fingerprint Randomizer | ✅ | ✅ |
-| Diff Detector | ✅ | ✅ |
-| Smart Cache (TTL, memory/disk) | ❌ | ✅ **BARU** |
-| Cookie Jar + Session Login | ❌ | ✅ **BARU** |
-| Proxy Rotation (round-robin/random/sticky + health tracking) | ❌ | ✅ **BARU** |
-| Per-domain Rate Limiter | ❌ | ✅ **BARU** |
-| Interceptors (request/response middleware) | ❌ | ✅ **BARU** |
-| Cancel Request (AbortController) | ❌ | ✅ **BARU** |
-| TimeoutError vs CanceledError (distinct classes) | ❌ | ✅ **BARU** |
-| JSON API Extraction (schema-based, bukan cuma HTML) | ❌ | ✅ **BARU** |
-| Auto-detect HTML vs JSON response | ❌ | ✅ **BARU** |
-| Sitemap + robots.txt Discovery | ❌ | ✅ **BARU** |
-| Multi-format Export (csv/json/ndjson/markdown) | ❌ | ✅ **BARU** |
-| Webhook Notifications | ❌ | ✅ **BARU** |
-| baseURL + auto query params | ❌ | ✅ **BARU** |
-| rejectUnauthorized override (self-signed/dev cert) | ❌ | ✅ **BARU** |
-| Local test suite (zero network dependency) | ❌ | ✅ **BARU**, 78 test |
-| Dependencies | 1 (cheerio) | 1 (cheerio) |
+**Fixes based on user feedback:**
 
----
-
-## Kenapa sengkrep-ryna?
-
-Library scraping biasanya fokus ke *gimana cara ambil data*. `sengkrep-ryna` fokus ke masalah yang datang setelah itu — dan sekarang juga ke masalah yang datang **sebelum** itu (akses, sesi, IP block).
-
-Masalah nyata yang sering terjadi:
-
-- Selector berubah diam-diam karena website deploy ulang — nggak ada yang alert
-- Data yang dihasilkan pass validation tapi strukturnya sudah beda dari kemarin
-- Rate limit kena, scraper mati, dan retry langsung hammer server makin cepat
-- Request pattern terlalu robotic — UA sama, header urutan sama, timing sama — langsung diblokir
-- Situs butuh login dulu sebelum data bisa diakses, dan session-nya hilang tiap request baru
-- Satu IP kena ban permanen karena nggak ada rotasi
-- Banyak situs modern nggak render data di HTML — data-nya datang dari endpoint JSON internal yang dipanggil via `fetch()`/XHR di belakang layar
-- Refetch URL yang sama berkali-kali padahal datanya belum berubah, buang-buang quota & waktu
-
-`sengkrep-ryna` hadir sebagai lapisan yang lo **wrapper** di atas scraper lo yang sudah ada, atau pakai langsung sebagai scraper lengkap.
-
----
-
-## Fitur
-
-| Modul | Fungsi |
+| Issue | Fix |
 |---|---|
-| **Schema Validator** | Validasi hasil scrape terhadap aturan type, pattern, dan custom function |
-| **Selector Health Monitor** | Track empty-rate dan count-drop per selector, alert kalau mulai aneh |
-| **Smart Retry** | Adaptive delay per HTTP status code dengan jitter, bukan sekedar `sleep(1000)` |
-| **Request Fingerprint** | Randomize UA, header order, Accept-Language, Sec-CH-UA, timing antar request |
-| **Diff Detector** | Simpan snapshot tiap run, bandingkan strukturnya, alert kalau ada yang berubah |
-| **Smart Cache** | TTL-based response cache, memory atau disk, skip network kalau masih fresh |
-| **Cookie Jar** | Auto-capture & replay cookie per domain, support login/session flow |
-| **Proxy Rotator** | Round-robin/random/sticky proxy rotation dengan CONNECT tunnel native (tanpa dependency tambahan) |
-| **Rate Limiter** | Token-bucket per hostname, cegah hammering satu domain |
-| **Interceptors** | Axios-style request/response middleware, termasuk error recovery |
-| **JSON Extractor** | Schema-based extraction dari JSON API pakai path notation (`data.items[].title`) |
-| **Discover** | Auto-temukan URL dari `robots.txt` + `sitemap.xml`, termasuk sitemap index bertingkat |
-| **Exporter** | Export ke CSV, JSON, NDJSON, atau Markdown table |
-| **Webhook** | Notifikasi realtime ke endpoint lo sendiri saat start/complete/error/progress |
-| **Auto-Pagination** | Loop halaman otomatis dengan `nextSelector` |
-| **Batch Scraping** | Scrape banyak URL dengan concurrency control |
+| No way to get raw HTML without schema | `scraper.fetch(url)` — returns `{status, headers, body}` raw |
+| Had to install cheerio separately despite being a dependency | `scraper.load(html)` and `sengkrep.cheerio` exported directly |
+| Selector fails when site structure changes slightly | `selector` now accepts arrays — tries each until one matches |
+| Pagination stops mid-way | `nextSelector: 'auto'` + total page detection from `.page-numbers` widget |
+| Error messages unclear about which field/selector failed | Errors now include field, attempted selectors, and status code |
+| Cache enabled without being noticed | Confirmed: cache is **OFF by default**, must be explicitly set |
+
+**New in v3.1:** HTTP/2 (multiplexing), DNS cache, keep-alive connection pool, binary-safe response handling (auto-detect images/files, no more text corruption), auto charset detection (Shift-JIS, GBK, etc. — not just UTF-8), stream-to-file for responses >10MB, JSON-LD & Microdata extractor, encoding utilities (base64/hex/unicode/HTML entity/XOR/Caesar), form auto-submit, progress bar, CSV/JSONL streaming writer, and CLI tool.
+
+**Why no TLS fingerprint spoofing / CAPTCHA solver?** Because their sole purpose is to defeat security controls that sites intentionally put in place. `sengkrep-ryna` focuses on reliability & compatibility, not bypassing third-party protections.
 
 ---
 
-## Instalasi
+## Positioning
+
+| Library | Best at |
+|---|---|
+| axios | HTTP client |
+| cheerio | HTML parser |
+| puppeteer/playwright | Browser automation |
+| crawlee | Scraping framework |
+| **sengkrep-ryna** | **Reliability layer** — middleware that keeps scrapers from breaking |
+
+`sengkrep-ryna` has its own HTTP client and HTML parser (so it can be used standalone), but its core value lies in the layers above: health monitor, diff detector, circuit breaker, smart retry, proxy rotation — the things that keep your scraper running next week, not just today.
+
+---
+
+## Why sengkrep-ryna?
+
+Real-world problems it solves:
+
+- Selectors change silently after site deployments — no one gets alerted
+- Binary responses (images/fonts/failed decompression) get treated as text and become garbled garbage
+- Sites use non-UTF-8 encodings (Shift-JIS, GBK) — results become mojibake
+- Rate limit hits, scraper dies, retry hammers the server even faster
+- Single domain goes down completely but scraper keeps retrying every request
+- Need to login before accessing data — CSRF token expires constantly
+- Process dies mid-crawl across millions of URLs — must restart from zero
+- Data you need lives in internal JSON API (XHR), not HTML
+
+`sengkrep-ryna` is the layer you **wrap** around your existing scraper, or use directly as a full-featured scraper.
+
+---
+
+## Installation
 
 ```bash
 npm install sengkrep-ryna
 ```
 
-Satu-satunya dependency eksternal: cheerio untuk HTML parsing. Semua fitur lain (proxy tunnel, cookie jar, cache, rate limiter, dst) dibangun di atas built-in Node.js modules saja.
+The only external dependency: cheerio. All other features (HTTP/2, proxy tunneling, cookie jar, cache, DNS cache, etc.) are built on Node.js native modules — requires Node.js 18+.
 
 ---
 
-Quick Start
+Quick Start — 3 Core Actions
 
 ```js
 const sengkrep = require('sengkrep-ryna');
 
-const data = await sengkrep('https://books.toscrape.com', {
+const res = await sengkrep.fetch('https://example.com');
+console.log(res.status, res.body);
+
+const $ = sengkrep.load(res.body);
+console.log($('h1').text());
+
+const data = await sengkrep.extract('https://books.toscrape.com', {
   title: 'h1',
   price: '.price_color',
-  instock: '.availability',
 });
-
 console.log(data);
 ```
+
+All three are consistent across all API levels — fetch() for raw HTTP, load() for manual parsing, extract() for schema-based scraping.
+
+---
+
+CLI
+
+```bash
+npx sengkrep-ryna fetch https://example.com
+
+npx sengkrep-ryna scrape https://books.toscrape.com \
+  --schema '{"title":"h1","price":".price_color"}' \
+  --format csv --output books.csv \
+  --pages 5 --next auto
+```
+
+Run sengkrep-ryna help for all options.
 
 ---
 
 Table of Contents
 
 · Core API
-  · sengkrep(url, schema, options)
-  · sengkrep.create(options)
-  · scraper.extract(url, schema, options)
-  · scraper.batch(urls, schema, options)
-  · scraper.paginate(startUrl, config, schema, options)
-  · scraper.login(url, formData, options)
-  · scraper.discover(origin, options)
-  · scraper.export(input, schema, options)
 · Schema Syntax
-  · HTML Schema
-  · JSON Schema
-· Modules
-  · Schema Validator
-  · Selector Health Monitor
-  · Smart Retry
-  · Request Fingerprint
-  · Diff Detector
-  · Smart Cache
-  · Cookie Jar & Sessions
-  · Proxy Rotation
-  · Rate Limiter
-  · Interceptors
-  · Sitemap Discovery
-  · Multi-format Export
-  · Webhook Notifications
+· Reliability — Retry, Circuit Breaker, Health Monitor, Diff Detector, Incremental
+· Identity & Access — Fingerprint, Cookies, CSRF, Auth/JWT, Proxy, Session Pool
+· Performance — Cache, HTTP/2, DNS Cache, Keep-Alive, Rate Limiter, Streaming
+· Data Extraction — JSON-LD/Microdata, Encoding Utils, Content Safety, Scripts, GraphQL, WordPress
+· Ops & Tooling — Observability, HAR, Webhooks, Plugins, Progress Bar
 · Configuration Reference
 · Error Handling
-· Accessing Meta (_ryna)
 · Testing
 · Examples
 · Architecture
@@ -170,621 +142,473 @@ Table of Contents
 
 Core API
 
-sengkrep(url, schema, options)
+sengkrep.fetch(url, options) / scraper.fetch(url, options)
 
-Fungsi utama. Fetch URL lalu extract data sesuai schema. Auto-detect HTML atau JSON.
+Raw HTTP request. No parsing, no schema.
 
 ```js
-const sengkrep = require('sengkrep-ryna');
+const res = await sengkrep.fetch('https://example.com/page');
+res.status;
+res.headers;
+res.body;
+res.binary;
+res.streamed;
+```
 
-const data = await sengkrep('https://example.com/product', {
+sengkrep.load(html) / scraper.load(html)
+
+Direct wrapper around cheerio.load(). No need to install cheerio separately.
+
+```js
+const $ = sengkrep.load(res.body);
+$('.product').each((i, el) => console.log($(el).text()));
+```
+
+Cheerio is also exported directly: const { cheerio } = require('sengkrep-ryna').
+
+sengkrep.extract(url, schema, options) / scraper.extract(...)
+
+Fetch + parse in one call based on a schema. Auto-detects HTML vs JSON vs RSS/Atom vs CSV.
+
+```js
+const data = await sengkrep.extract('https://example.com/product', {
   name:  'h1.product-title',
   price: '.price-tag',
-  stock: '.availability',
-});
-```
-
----
-
-sengkrep.create(options)
-
-Buat instance Ryna dengan konfigurasi khusus. Semua modul dikonfigurasi di sini.
-
-```js
-const scraper = sengkrep.create({
-  logLevel: 'debug',
-  baseURL:  'https://example.com',
-
-  fingerprint: {
-    userAgent: 'random',
-    rotateUAOnEachRequest: true,
-    randomizeHeaderOrder: true,
-    randomizeTiming: true,
-  },
-
-  retry: {
-    max: 4,
-    jitter: true,
-    retryOn: [408, 429, 500, 502, 503, 504],
-  },
-
-  health: {
-    alertThreshold: 0.5,
-    onAlert: (report) => console.error('Health alert!', report),
-  },
-
-  diff: {
-    onDiff: (result) => {
-      if (result.hasCritical) console.error('Critical structure change!', result.changes);
-    },
-  },
-
-  cache: { ttl: 3600 },
-  cookies: true,
-  rateLimit: { requestsPerSecond: 2 },
-  proxies: ['http://user:pass@proxy1:8080', 'http://proxy2:8080'],
-  proxyStrategy: 'sticky',
-
-  webhook: {
-    onComplete: 'https://your-api.com/scraping-done',
-    onError:    'https://your-api.com/scraping-error',
-  },
-
-  validate: {
-    name:  { required: true, type: 'string', minLength: 2 },
-    price: { required: true, pattern: /^[£$€][\d,.]+$/ },
-  },
-});
-
-const data = await scraper.extract('/product/laptop-x', schema);
-```
-
----
-
-scraper.extract(url, schema, options) {#scraperextract}
-
-```js
-const data = await scraper.extract('https://example.com', schema, {
-  strict: true,
-  responseType: 'auto',
-  params: { page: 2, sort: 'newest' },
-  request: {
-    headers: { 'X-Custom': 'value' },
-    method: 'GET',
-    signal: controller.signal,
-    rejectUnauthorized: true,
-  },
 });
 ```
 
 Options:
 
-Key Type Default Keterangan
-strict boolean false Throw ValidationError jika validasi gagal
-responseType 'auto' \| 'html' \| 'json' 'auto' Paksa mode ekstraksi, atau biarkan auto-detect dari Content-Type / body sniffing
-params object — Query params, di-merge ke URL otomatis
-request.headers object {} Header tambahan untuk request
-request.method string 'GET' HTTP method
-request.body string — Request body (untuk POST/PUT)
-request.signal AbortSignal — Untuk cancel request di tengah jalan
-request.rejectUnauthorized boolean true Set false untuk terima self-signed cert (dev/internal only)
+Key Type Default Description
+strict boolean false Throw if validation fails
+responseType 'auto'\|'html'\|'json'\|'rss'\|'csv' 'auto' Force parsing mode
+params object — Query params, merged into URL
+allowBinary boolean false Allow returning binary metadata (instead of throwing)
+allowStreamed boolean false Allow returning streamed-to-disk metadata
+request.headers object {} Additional headers
+request.signal AbortSignal — For cancelling requests
 
----
-
-scraper.batch(urls, schema, options) {#scraperbatch}
+scraper.batch(urls, schema, options)
 
 ```js
-const results = await scraper.batch(urls, { name: 'h1', price: '.price' }, {
+const results = await scraper.batch(urls, schema, {
   concurrency: 3,
   delay: 800,
-  onProgress: (done, total) => console.log(`${done}/${total}`),
-});
-
-results.forEach(r => {
-  if (r.error) console.error(`Failed: ${r.url}`, r.error.message);
-  else console.log(r.url, r.data);
+  randomOrder: true,
+  progressBar: true,
+  onProgress: (done, total) => {},
 });
 ```
 
-Key Type Default Keterangan
-concurrency number 3 Jumlah request paralel
-delay number 800 Base delay (ms) antar batch, di-jitter otomatis
-onProgress function null (done, total) => void
-strict boolean false Throw per-item jika validasi gagal
+randomOrder shuffles URL order (more natural load distribution). progressBar enables built-in terminal progress bar.
 
-Return: array { url, data, error }.
+scraper.stream(urls, schema, options)
 
----
+Async generator — process large datasets without waiting for all to finish.
 
-scraper.paginate(startUrl, config, schema, options) {#scraperpaginate}
+```js
+for await (const { url, data, error } of scraper.stream(urls, schema, { concurrency: 5 })) {
+  if (!error) console.log(url, data);
+}
+```
+
+scraper.paginate(startUrl, config, schema, options)
 
 ```js
 const items = await scraper.paginate(
   'https://books.toscrape.com/catalogue/page-1.html',
-  { nextSelector: '.next a', itemsSelector: '.product_pod', maxPages: 10, delayBetweenPages: 1200 },
-  { title: 'h3 a', price: '.price_color', rating: '.star-rating' },
+  { nextSelector: 'auto', itemsSelector: '.product_pod', maxPages: 10 },
+  { title: 'h3 a', price: '.price_color' },
 );
 ```
 
-Key Type Default Keterangan
-nextSelector string — Required. Selector link halaman berikutnya
-itemsSelector string null Selector container per item. Kosong = seluruh halaman jadi satu object
-maxPages number 10 Batas maksimal halaman
-delayBetweenPages number 1200 Jeda antar halaman (ms), di-jitter ±20%
+nextSelector: 'auto' uses heuristic detection (rel="next", "Next"/"»" text, .pagination-next class, or URL number increment) — no need to know the site structure beforehand. It also reads .page-numbers/.pagination widgets to estimate total pages and logs it.
 
----
+scraper.crawl(options)
 
-scraper.login(url, formData, options) {#scraperlogin}
-
-POST form-urlencoded ke halaman login. Cookie session yang didapat otomatis tersimpan di Cookie Jar dan dipakai di semua request berikutnya.
+Resumable BFS crawler with state persistence.
 
 ```js
-const ok = await scraper.login('https://example.com/login', {
-  username: 'qrtz',
-  password: 'secret',
-});
-
-if (ok) {
-  const data = await scraper.extract('https://example.com/dashboard', {
-    welcome: '.welcome-message',
-  });
-}
-```
-
-Return: boolean — true kalau status response < 400.
-
----
-
-scraper.discover(origin, options) {#scraperdiscover}
-
-Temukan semua URL dari sebuah situs lewat robots.txt → Sitemap: → sitemap.xml (termasuk sitemap index bertingkat).
-
-```js
-const urls = await scraper.discover('https://example.com', {
-  maxDepth: 2,
-  maxEntries: 2000,
-  pattern: /\/product\//,
-});
-
-const results = await scraper.batch(urls, schema);
-```
-
-Key Type Default Keterangan
-maxDepth number 1 Berapa level sitemap index yang di-follow
-maxEntries number 5000 Batas total URL yang dikumpulkan
-pattern RegExp null Filter URL yang masuk hasil akhir
-
----
-
-scraper.export(input, schema, options) {#scraperexport}
-
-Scrape lalu langsung export ke file — atau kalau input sudah berupa data hasil ekstraksi, langsung diserialisasi tanpa scrape ulang.
-
-```js
-await scraper.export('https://example.com/product/1', schema, {
-  format: 'json',
-  path: './output/product.json',
-});
-
-await scraper.export(urls, schema, {
-  format: 'csv',
-  path: './output/products.csv',
+const job = scraper.crawl({
+  seed:    'https://example.com',
+  schema:  { title: 'h1' },
+  follow:  /\/article\//,
+  maxUrls: 5000,
   concurrency: 5,
+  stateFile: './crawl-state.json',
 });
 
-await scraper.export('https://example.com/catalog', schema, {
-  pagination: { nextSelector: '.next', itemsSelector: '.item', maxPages: 20 },
-  format: 'markdown',
-  path: './output/catalog.md',
-});
+job.on('url:done', ({ url, data }) => console.log(url));
+job.on('progress', ({ done, queued }) => console.log(`${done} done, ${queued} queued`));
 
-await sengkrep.exportData(alreadyExtractedArray, { format: 'ndjson', path: './output/dump.ndjson' });
+await job.start();
+
+await job.resume();
 ```
 
-input bisa berupa: satu URL (extract), array URL (batch), satu URL + options.pagination (paginate), atau array/object data yang sudah diekstrak sebelumnya (langsung diserialisasi).
+If the process dies (crash, ctrl+c), state (visited URLs + queue + results) is saved to stateFile. Create a new instance with the same config and call .resume().
 
-Format Keterangan
-json Array of objects, pretty-printed
-csv Header otomatis dari union semua keys, quote-escaped
-ndjson Satu JSON object per baris, siap untuk streaming/RAG pipeline
-markdown Tabel markdown, siap tempel ke dokumentasi
+scraper.login(url, formData, options)
+
+POST to login page, auto-harvests CSRF token from meta tags/hidden inputs/cookies, session cookie is automatically used in subsequent requests.
+
+```js
+const ok = await scraper.login('https://example.com/login', { username: 'x', password: 'y' });
+```
+
+scraper.submitForm(url, formSelector, overrides)
+
+Generalization of login() — parses any form (not just login) and submits with overridden fields.
+
+```js
+const res = await scraper.submitForm('https://example.com/search', 'form#search', { q: 'laptop' });
+```
+
+scraper.discover(origin, options)
+
+Find URLs via robots.txt → sitemap.xml (including nested sitemap indexes).
+
+```js
+const urls = await scraper.discover('https://example.com', { pattern: /\/product\// });
+```
+
+scraper.export(input, schema, options)
+
+Scrape + serialize to file in one call. input can be a single URL, array of URLs, or already-extracted data.
+
+```js
+await scraper.export(urls, schema, { format: 'csv', path: './output/products.csv' });
+```
 
 ---
 
 Schema Syntax
 
-HTML Schema
-
-Schema bisa ditulis dalam 3 bentuk:
-
-```js
-const shorthand = {
-  title: 'h1',
-  price: '.price',
-};
-
-const withArray = {
-  tags:   ['.tag'],
-  images: ['img.product-photo'],
-};
-
-const full = {
-  title: {
-    selector:  'h1.product-title',
-    required:  true,
-    type:      'text',
-    transform: (val) => val.trim().toLowerCase(),
-    default:   'Untitled',
-  },
-  price: {
-    selector: '.price-tag',
-    required: true,
-    pattern:  /^[£$€][\d,.]+$/,
-  },
-  images: {
-    selector: 'img.gallery-photo',
-    multiple: true,
-    attr:     'src',
-  },
-  description: {
-    selector: '.product-desc',
-    type:     'html',
-  },
-};
-```
-
-Field options:
-
-Key Type Keterangan
-selector string CSS selector
-required boolean Throw ExtractionError jika kosong
-multiple boolean Kumpulkan semua elemen jadi array
-attr string Ambil attribute HTML, misal 'href', 'src'
-type 'text' \| 'html' text pakai .text(), html pakai .html()
-transform function Post-process value: (val) => newVal
-pattern RegExp Tandai health mismatch kalau value nggak cocok
-default any Nilai default kalau kosong (field nggak required)
-
-JSON Schema
-
-Untuk situs yang datanya datang dari endpoint JSON API. Selector-nya berupa path notation, bukan CSS selector.
+HTML — with Fallback Selectors
 
 ```js
 const schema = {
-  userName: 'data.user.name',
-  titles:   'data.items[].title',
-  firstTag: 'data.items[0].tags[0]',
-  rating: {
-    path:      'data.product.rating',
-    required:  true,
-    transform: (val) => parseFloat(val),
-    default:   0,
+  title: 'h1',
+
+  tags: ['.tag'],
+
+  price: {
+    selector: ['.price-v2', '.price-v1', '.price'],
+    required: true,
+    pattern:  /^[£$€Rp][\d,.]+$/,
+  },
+
+  description: {
+    selector:  '.desc',
+    type:      'html',
+    transform: (val) => val.trim(),
+    default:   '',
   },
 };
-
-const data = await scraper.extract('https://api.example.com/product/1', schema, {
-  responseType: 'json',
-});
 ```
 
-Path syntax:
+selector can be an array — tried one by one, first match wins. Useful for sites where class names change per deploy (CSS-in-JS hashes, A/B testing, etc.). Health report (data._ryna.health) records which selector actually matched.
 
-Sintaks Arti
-a.b.c Akses object key bersarang
-a.b[0].c Akses index array tertentu
-a.b[].c Wildcard — map ke semua elemen array, hasil jadi array
-a.b[][0] Kombinasi: untuk setiap elemen array b, ambil index 0-nya
+Field options: selector (string/array), required, multiple, attr, type ('text'\|'html'), transform, pattern, default.
 
-Field dengan wildcard ([]) otomatis mengembalikan array. Field tanpa wildcard mengembalikan single value (elemen pertama yang ditemukan).
-
-responseType: 'auto' (default) akan otomatis pakai JSON extractor kalau Content-Type response mengandung application/json, atau kalau body-nya diawali {/[ walau Content-Type-nya nggak diset dengan benar.
-
----
-
-Modules
-
-Schema Validator
+JSON — Path Notation, Also with Fallbacks
 
 ```js
-const scraper = sengkrep.create({
-  validate: {
-    name:   { required: true, type: 'string', minLength: 3, maxLength: 200 },
-    price:  { required: true, pattern: /^[£$€][\d,.]+$/ },
-    rating: { type: 'number', custom: (val) => (val >= 0 && val <= 5) ? true : 'Rating harus antara 0 dan 5' },
-    tags:   { minItems: 1 },
-    url:    { type: 'url' },
-  },
-});
+const schema = {
+  title: { path: ['data.name', 'data.title', 'title'] },
+  items: 'data.items[].name',
+};
+
+const data = await scraper.extract(apiUrl, schema, { responseType: 'json' });
 ```
 
-Rule Type Keterangan
-required boolean Field tidak boleh null/empty
-type string 'string', 'number', 'boolean', 'url', 'email', 'date'
-pattern RegExp Value harus match regex
-minLength / maxLength number Panjang string (warning, bukan error)
-minItems number Minimum item untuk array (warning)
-notEmpty boolean Value tidak boleh string kosong/whitespace
-custom function (value, allData) => true \| 'pesan error'
-
-Akses hasil: data._ryna.validation.{valid, errors, warnings}. Pakai { strict: true } di extract() untuk langsung throw.
+a.b[].c = wildcard (maps to all array elements). a.b[0].c = specific index.
 
 ---
 
-Selector Health Monitor
+Reliability
 
-Melacak histori tiap selector per URL dalam sliding window. Alert kalau empty-rate atau count-drop melewati threshold.
+Retry
+
+Adaptive backoff per status code + jitter. 429/403 wait longer than 500/502. Requests cancelled via AbortSignal are never retried.
 
 ```js
-const scraper = sengkrep.create({
-  health: {
-    alertThreshold: 0.5,
-    windowSize: 15,
-    onAlert: ({ url, alerts }) => alerts.forEach(a => console.error(`[HEALTH] ${a.message}`)),
-  },
-});
+scraper.create({ retry: { max: 3, retryOn: [408, 429, 500, 502, 503, 504] } });
 ```
 
-Alert type Keterangan
-high_empty_rate Selector sering return kosong
-count_drop Jumlah item turun drastis dari rata-rata
-pattern_mismatch Value nggak cocok pattern di schema
+Circuit Breaker
 
-API manual: scraper.health.getReport(url), .getAllReports(), .reset(url?).
-
----
-
-Smart Retry
+Stops hammering domains that are clearly down, instead of retrying endlessly.
 
 ```js
-const scraper = sengkrep.create({
-  retry: {
-    max: 4,
-    jitter: true,
-    retryOn: [408, 429, 500, 502, 503, 504, 403],
-    retryOnNetwork: true,
-    retryOnTimeout: true,
-    onRetry: ({ attempt, status, code, waitMs }) => console.log(`Retry #${attempt} | ${status ?? code} | wait ${waitMs}ms`),
-  },
+scraper.create({
+  circuitBreaker: { threshold: 5, cooldown: 60000, onOpen: ({ key }) => console.log(`${key} circuit open`) },
 });
 ```
 
-Delay strategy per status code:
+CLOSED → (consecutive failures) → OPEN (all requests immediately rejected) → (after cooldown) → HALF_OPEN (one test request) → back to CLOSED if successful, OPEN if it fails.
 
-Status Base Delay Multiplier Max Delay
-429 5000ms ×2.0 120s
-403 8000ms ×2.0 60s
-503 3000ms ×1.5 30s
-502, 504 2000ms ×1.5 20s
-500 1500ms ×1.5 15s
-408 1000ms ×1.2 10s
-Default 1000ms ×1.5 15s
+Health Monitor
 
-Setiap delay dikali faktor jitter random. Request yang di-cancel lewat AbortSignal (CanceledError) tidak pernah di-retry, apapun konfigurasinya.
-
----
-
-Request Fingerprint
+Tracks empty-rate and count-drop per selector in a sliding window.
 
 ```js
-const scraper = sengkrep.create({
-  fingerprint: {
-    userAgent: 'random',
-    rotateUAOnEachRequest: true,
-    randomizeHeaderOrder: true,
-    randomizeTiming: true,
-  },
-  delay: 1500,
-  delayMin: 800,
-  delayMax: 3500,
-});
+scraper.create({ health: { alertThreshold: 0.5, onAlert: ({ alerts }) => {} } });
 ```
-
-Elemen Detail
-User-Agent Pool 10 UA realistis (Chrome, Firefox, Safari, Edge, Linux)
-Accept-Language Rotasi dari 6 kombinasi bahasa
-Accept-Encoding Variasi gzip,deflate,br
-Sec-CH-UA / Sec-CH-UA-Platform Auto-generate sesuai UA terpilih
-Header order Shuffle pakai Fisher-Yates
-Timing Jitter ±30% dari base delay
-
----
 
 Diff Detector
 
+Snapshots per run, compares structure, alerts on changes (keys_removed, count_changed, etc.).
+
 ```js
-const scraper = sengkrep.create({
-  diff: {
-    storageDir: '.ryna-snapshots',
-    sensitivity: 'structural',
-    onDiff: (result) => {
-      if (result.hasCritical) sendAlert('Scraper structure changed!', result.changes);
-    },
+scraper.create({ diff: { onDiff: ({ hasCritical, changes }) => {} } });
+```
+
+Incremental (ETag / Last-Modified)
+
+Skip re-extraction if the server says content hasn't changed (304 Not Modified) — saves bandwidth and time.
+
+```js
+scraper.create({ incremental: true });
+```
+
+---
+
+Identity & Access
+
+Fingerprint
+
+UA rotation, randomized header order, timing jitter, Sec-Fetch-* headers consistent with request context (not hardcoded).
+
+```js
+scraper.create({ fingerprint: { userAgent: 'random', rotateUAOnEachRequest: true } });
+```
+
+Cookies
+
+Enabled by default (cookies: true). Auto-captures from Set-Cookie, auto-replays to the same domain including subdomains.
+
+CSRF Handler
+
+Automatically used in login()/submitForm() — extracts token from meta tags/hidden inputs/cookies, sends as form field + header. For sessions you actually have access to (your own accounts, your own sites).
+
+Auth Manager (JWT/Bearer auto-refresh)
+
+```js
+scraper.create({
+  auth: {
+    token: initialToken,
+    refresh: async (oldToken) => (await getNewToken(oldToken)),
+    refreshOn: [401],
   },
 });
 ```
 
-Change type Severity Keterangan
-type_changed 🔴 critical Tipe data berubah (object → array)
-keys_removed 🔴 critical Key yang sebelumnya ada sekarang hilang
-item_schema_changed 🔴 critical Keys dalam array item berubah
-fields_became_null 🟡 warn Field yang sebelumnya ada data kini null
-count_changed 🟡 warn Jumlah item array berubah drastis (≥50%)
-keys_added 🟢 info Key baru muncul
-fields_recovered 🟢 info Field yang sebelumnya null kini ada data
-value_changed 🟢 info Nilai berubah (hanya saat sensitivity: 'value')
-
-API manual: scraper.diff.clearSnapshot(url), .clearAll().
-
----
-
-Smart Cache
-
-TTL-based cache di level HTTP response — skip network kalau masih fresh, tapi tetap jalanin extraction/health/diff/validation di setiap call (jadi metadata tetap akurat).
-
-```js
-const scraper = sengkrep.create({
-  cache: {
-    ttl: 3600,
-    storage: 'memory',
-    maxItems: 1000,
-  },
-});
-
-const first  = await scraper.extract(url, schema);
-const second = await scraper.extract(url, schema);
-
-console.log(first._ryna.cache.hit);
-console.log(second._ryna.cache.hit);
-```
-
-Key Type Default Keterangan
-ttl number 3600 Detik sebelum entry kadaluarsa
-storage 'memory' \| 'disk' 'memory' disk persist lintas restart proses
-storageDir string .sengkrep-ryna-cache Lokasi penyimpanan kalau storage: 'disk'
-maxItems number 1000 Batas entry di memory (LRU-ish eviction)
-
-API manual: scraper.cache.stats() → { hits, misses, sets, size, hitRate }.
-
----
-
-Cookie Jar & Sessions
-
-Aktif secara default (cookies: true). Cookie dari Set-Cookie otomatis ditangkap dan dikirim ulang ke request berikutnya yang ke domain yang sama — termasuk subdomain.
-
-```js
-const scraper = sengkrep.create({ cookies: true });
-
-await scraper.login('https://example.com/login', { user: 'qrtz', pass: 'secret' });
-const dashboard = await scraper.extract('https://example.com/dashboard', schema);
-```
-
-Matiin kalau nggak perlu (request jadi sedikit lebih cepat): sengkrep.create({ cookies: false }).
-
-API manual: scraper.cookieJar.getAll(hostname), .export(), .import(snapshot), .clear(hostname?) — export()/import() berguna buat nyimpen session ke disk antar proses.
-
----
+Detects 401, refreshes once, retries automatically. Concurrent requests don't trigger multiple refreshes (deduped).
 
 Proxy Rotation
 
-CONNECT tunnel buat HTTPS dan forward proxy buat HTTP — keduanya diimplementasi native pakai net/tls/http/https, tanpa dependency tambahan kayak https-proxy-agent.
+CONNECT tunnel native (HTTPS) and forward proxy (HTTP) — no additional dependencies needed.
 
 ```js
-const scraper = sengkrep.create({
-  proxies: [
-    'http://user:pass@proxy1.example.com:8080',
-    'http://proxy2.example.com:8080',
-    'http://proxy3.example.com:8080',
-  ],
-  proxyStrategy: 'sticky',
-  proxyMaxFailures: 3,
-});
+scraper.create({ proxies: ['http://user:pass@proxy1:8080', 'http://proxy2:8080'], proxyStrategy: 'sticky' });
 ```
 
-Strategy Keterangan
-round-robin Gilir satu-satu sesuai urutan
-random Pilih acak tiap request
-sticky Domain yang sama selalu dapet proxy yang sama (konsisten per-site)
+round-robin / random / sticky (same domain = same proxy). Proxies that fail consecutively are automatically skipped.
 
-Proxy yang gagal berturut-turut (proxyMaxFailures, default 3) otomatis ditandai unhealthy dan dihindari sampai proxy lain juga gagal. Sukses me-reset hitungan failure-nya.
+Session Pool
 
-API manual: scraper.proxyRotator.stats() → [{ proxy, failures, healthy }].
+Multi-session (multi-account/API key) with independent cookie jars and fingerprints per session.
+
+```js
+const pool = scraper.sessionPool; // or: scraper.create({ sessionPool: { size: 5, strategy: 'least-used' } });
+```
 
 ---
+
+Performance
+
+Cache
+
+TTL-based, OFF by default. Skips network if still fresh, but extraction/health/diff/validation still run every call (metadata stays accurate).
+
+```js
+scraper.create({ cache: { ttl: 3600, storage: 'memory' } });
+```
+
+HTTP/2
+
+Multiplexes multiple requests over a single connection. Auto-falls back if server doesn't support it.
+
+```js
+const scraper = scraper.create({ http2: true });
+```
+
+DNS Cache
+
+Caches DNS resolution results with TTL, round-robin if hostname has multiple IPs.
+
+```js
+scraper.create({ dns: { ttl: 300000 } });
+```
+
+Keep-Alive Pool
+
+Enabled by default — TCP connections are reused for requests to the same host, faster and more considerate to target servers.
 
 Rate Limiter
 
-Cegah satu domain di-hammer, terpisah per hostname (jadi domain lain nggak ikut melambat).
-
 ```js
-const scraper = sengkrep.create({
-  rateLimit: {
-    requestsPerSecond: 2,
-    concurrency: 3,
-  },
-});
+scraper.create({ rateLimit: { requestsPerSecond: 2, concurrency: 3 } });
 ```
 
-Key Type Keterangan
-requestsPerSecond number Jarak minimum antar request ke hostname yang sama
-concurrency number Maksimal request simultan ke hostname yang sama
+Stream-to-file
 
-Kombinasi keduanya bisa dipakai sekaligus. Default: disabled (undefined/null, nggak ada limit).
+Large responses (default >10MB) are automatically streamed to a temp file instead of being fully buffered in memory.
+
+```js
+const res = await scraper.fetch(bigFileUrl);
+if (res.streamed) console.log('Saved to', res.filePath);
+```
+
+Streaming Writer (CSV/JSONL)
+
+```js
+const { StreamWriter } = require('sengkrep-ryna');
+const writer = new StreamWriter('./output/data.csv', { format: 'csv' });
+for (const item of hugeList) writer.write(item);
+await writer.close();
+```
 
 ---
 
-Interceptors
+Data Extraction
 
-Axios-style middleware, selalu tersedia di scraper.interceptors — nggak perlu config khusus buat enable.
+JSON-LD & Microdata
+
+Formats that sites intentionally expose for SEO rich snippets — the most reliable for scraping.
 
 ```js
-scraper.interceptors.request.use((config) => {
-  config.headers['X-Custom-Header'] = 'my-value';
-  console.log(`➡️ Request ke: ${config.url}`);
-  return config;
-});
+const products = await scraper.extractJsonLd(url);
+const people    = await scraper.extractMicrodata(url);
+const cards     = await scraper.extractDataAttributes(url, '[data-product-id]');
+```
 
-scraper.interceptors.response.use((response) => {
-  response.body = response.body.replace(/&nbsp;/g, ' ');
-  return response;
-}, (error) => {
-  if (error.status === 404) {
-    console.log('⚠️ Page not found, skipping...');
-    return { status: 404, body: '', headers: {}, skipped: true };
+Content Safety (charset & binary)
+
+Automatically runs on every fetch()/extract() — no setup needed.
+
+· Auto charset detection: BOM → Content-Type header → <meta charset> → fallback UTF-8. Supports Shift-JIS, GBK, EUC-JP, Windows-1252, etc. (native via ICU, no iconv-lite dependency).
+· Binary detection: magic-byte sniffing (PNG, JPEG, PDF, ZIP, GZIP, WOFF, etc.) + null-byte heuristic. Binary responses won't be corrupted into text — extract() throws a clear error (BINARY_RESPONSE) unless you pass allowBinary: true.
+
+```js
+try {
+  await scraper.extract(url, schema);
+} catch (err) {
+  if (err.code === 'BINARY_RESPONSE') {
+    console.log('This is a', err.meta.sniffedType, 'file, not HTML/JSON');
   }
-  throw error;
-});
+}
 ```
 
-request.use(onFulfilled) jalan sebelum request dikirim — terima dan return objek { url, method, headers, body, proxy, signal, timeout }.
+Encoding Utilities
 
-response.use(onFulfilled, onRejected) jalan setelah response diterima (atau gagal). onRejected bisa recover dari error dengan return value baru (bukan throw), persis kayak contoh 404-skip di atas.
+```js
+const {
+  decodeHtmlEntities, decodeUnicodeEscapes,
+  decodeBase64, decodeHex, detectAndDecode,
+  xorDecode, caesarDecode, rot13, parseJSONP,
+} = require('sengkrep-ryna');
 
-use() return ID yang bisa dipakai buat eject(id) kalau interceptor-nya mau dicabut.
+decodeHtmlEntities('Tom &amp; Jerry');
+detectAndDecode(someString);
+parseJSONP('callback({"ok":true})');
+```
+
+Script Extractor
+
+```js
+const scripts = await scraper.extractScripts(url);
+const { extractSourceMapUrl, beautifyJs } = require('sengkrep-ryna');
+```
+
+Extracts and beautifies script tags — not a security deobfuscator.
+
+GraphQL Client
+
+```js
+const schema = await scraper.graphql.introspect(endpoint);
+const data   = await scraper.graphql.query(endpoint, queryString, variables);
+const items  = await scraper.graphql.queryAllPages(endpoint, queryString, { connectionPath: 'products' });
+```
+
+WordPress Helper
+
+Public REST API (/wp-json/) and admin-ajax.php with nonce handling.
+
+```js
+const { data } = await scraper.wordpress.restApi(origin, 'wp/v2/posts');
+const all       = await scraper.wordpress.restApiAll(origin, 'wp/v2/posts', { per_page: 100 });
+const result    = await scraper.wordpress.ajaxAction(origin, 'load_more_posts', {}, { nonceFromPage: '/blog' });
+```
 
 ---
 
-Sitemap Discovery
+Ops & Tooling
+
+Observability Dashboard
 
 ```js
-const urls = await scraper.discover('https://example.com', {
-  maxDepth: 2,
-  pattern: /\/blog\//,
+scraper.create({ observability: { enabled: true, port: 3001 } });
+```
+
+Open http://localhost:3001 for live stats. Or pull manually:
+
+```js
+const report = scraper.getObservabilityReport();
+report.successRate;
+report.categories;
+report.bytes;
+report.topErrors;
+```
+
+Error categories auto-classified: network, timeout, http4xx, http5xx, validation, security, circuit.
+
+HAR Export
+
+```js
+const scraper = sengkrep.create({ har: true });
+await scraper.extract(url, schema);
+scraper.saveHar('./debug.har');
+```
+
+Open .har file in Chrome DevTools (Network tab → import).
+
+Webhooks
+
+```js
+scraper.create({ webhook: { onComplete: 'https://your-api.com/done', onError: 'https://your-api.com/error' } });
+```
+
+Plugin System
+
+```js
+const { plugins } = require('sengkrep-ryna');
+
+scraper.plugins.use(plugins.timestamp());
+scraper.plugins.use(plugins.logToFile('./scrape.log'));
+
+scraper.plugins.use({
+  beforeRequest: ({ url, options }) => ({ url, options }),
+  afterExtract:  ({ data, meta })   => { data.custom = true; return { data, meta }; },
 });
 ```
 
-Alurnya: fetch robots.txt → cari baris Sitemap: → kalau nggak ketemu, fallback ke /sitemap.xml → parse <urlset> atau <sitemapindex> (rekursif sampai maxDepth) → kumpulin semua <loc>.
-
----
-
-Multi-format Export
+Progress Bar
 
 ```js
-const { toCSV, toJSON, toNDJSON, toMarkdownTable, exportData } = require('sengkrep-ryna');
-
-const csv = toCSV(data);
-const md  = toMarkdownTable(data);
-
-exportData(data, { format: 'ndjson', path: './output/dump.ndjson' });
+await scraper.batch(urls, schema, { progressBar: true });
 ```
-
-Bisa dipakai langsung (scraper.export(...)) atau lewat fungsi util standalone kalau data udah ada di tangan.
-
----
-
-Webhook Notifications
-
-```js
-const scraper = sengkrep.create({
-  webhook: {
-    onStart:    'https://your-api.com/scraping-start',
-    onComplete: 'https://your-api.com/scraping-done',
-    onError:    'https://your-api.com/scraping-error',
-    onProgress: 'https://your-api.com/scraping-progress',
-  },
-});
-```
-
-Fire-and-forget POST JSON { event, timestamp, ...payload } ke endpoint yang dikonfigurasi. Gagal kirim webhook nggak akan bikin scraping job-nya ikut gagal.
 
 ---
 
@@ -792,82 +616,31 @@ Configuration Reference
 
 ```js
 const scraper = sengkrep.create({
-  logLevel: 'info',
-  logPretty: true,
-  baseURL: 'https://api.example.com',
+  logLevel: 'info', logPretty: true, baseURL: null,
+  timeout: 30000, maxRedirects: 5, keepAlive: true,
+  delay: 1000, delayMin: 600, delayMax: 3000,
+  maxMemoryBuffer: 10 * 1024 * 1024,
 
-  timeout: 30000,
-  maxRedirects: 5,
+  responseType: 'auto', cookies: true, http2: false,
 
-  delay: 1000,
-  delayMin: 600,
-  delayMax: 3000,
-
-  responseType: 'auto',
-  cookies: true,
-
-  fingerprint: {
-    userAgent: 'random',
-    rotateUAOnEachRequest: true,
-    randomizeHeaderOrder: true,
-    randomizeTiming: true,
-  },
-
-  retry: {
-    max: 3,
-    jitter: true,
-    retryOn: [408, 429, 500, 502, 503, 504, 403],
-    retryOnNetwork: true,
-    retryOnTimeout: true,
-    onRetry: ({ attempt, status, code, waitMs }) => {},
-  },
-
-  health: {
-    alertThreshold: 0.5,
-    windowSize: 10,
-    onAlert: ({ url, alerts }) => {},
-  },
-
-  diff: {
-    storageDir: '.sengkrep-ryna',
-    sensitivity: 'structural',
-    onDiff: (result) => {},
-  },
-
-  cache: {
-    ttl: 3600,
-    storage: 'memory',
-    maxItems: 1000,
-  },
-
-  rateLimit: {
-    requestsPerSecond: null,
-    concurrency: null,
-  },
-
-  proxies: [],
-  proxyStrategy: 'round-robin',
-  proxyMaxFailures: 3,
-
-  webhook: {
-    onStart: null,
-    onComplete: null,
-    onError: null,
-    onProgress: null,
-  },
-
-  validate: {
-    fieldName: {
-      required: false,
-      type: 'string',
-      pattern: /regex/,
-      minLength: 0,
-      maxLength: Infinity,
-      minItems: 0,
-      notEmpty: false,
-      custom: (val, allData) => true,
-    },
-  },
+  fingerprint: { userAgent: 'random', rotateUAOnEachRequest: true, randomizeHeaderOrder: true, randomizeTiming: true },
+  retry: { max: 3, jitter: true, retryOn: [408, 429, 500, 502, 503, 504, 403] },
+  health: { alertThreshold: 0.5, windowSize: 10, onAlert: null },
+  diff: { storageDir: '.sengkrep-ryna', sensitivity: 'structural', onDiff: null },
+  cache: false,
+  circuitBreaker: false,
+  incremental: false,
+  rateLimit: { requestsPerSecond: null, concurrency: null },
+  proxies: [], proxyStrategy: 'round-robin', proxyMaxFailures: 3,
+  dns: false,
+  sessionPool: false,
+  security: { blockPrivateIPs: false, allowDomains: null, blockDomains: [] },
+  auth: { token: null, refresh: null, refreshOn: [401] },
+  csrf: { auto: true },
+  observability: { enabled: false, port: null },
+  webhook: { onStart: null, onComplete: null, onError: null, onProgress: null },
+  har: false,
+  validate: {},
 });
 ```
 
@@ -877,217 +650,127 @@ Error Handling
 
 ```js
 const { errors } = require('sengkrep-ryna');
-const {
-  FetchError, TimeoutError, CanceledError, ProxyError,
-  ExtractionError, JsonExtractionError, ValidationError,
-} = errors;
 
 try {
   await scraper.extract(url, schema, { strict: true });
 } catch (err) {
-  if (err instanceof TimeoutError) console.log('Request timeout');
-  if (err instanceof CanceledError) console.log('Dibatalkan via AbortController');
-  if (err instanceof ProxyError) console.log('Proxy gagal connect/tunnel:', err.message);
-  if (err instanceof FetchError) console.log('status:', err.status, 'code:', err.code);
-  if (err instanceof ExtractionError) console.log('Required field kosong:', err.field, err.selector);
-  if (err instanceof JsonExtractionError) console.log('Path JSON nggak ketemu:', err.field, err.path);
-  if (err instanceof ValidationError) err.errors.forEach(e => console.log(e.field, e.message));
+  switch (err.code) {
+    case 'HTTP_ERROR':        console.log('status', err.status); break;
+    case 'TIMEOUT':            break;
+    case 'CANCELED':           break;
+    case 'NETWORK_ERROR':      break;
+    case 'PROXY_ERROR':        break;
+    case 'SECURITY_BLOCKED':   break;
+    case 'CIRCUIT_OPEN':       console.log('retry after', err.retryAt); break;
+    case 'BINARY_RESPONSE':    console.log('type', err.meta.sniffedType); break;
+  }
+  if (err.name === 'ValidationError') err.errors.forEach(e => console.log(e.field, e.message));
+  if (err.name === 'ExtractionError') console.log(err.field, err.selector);
 }
-```
-
-FetchError codes:
-
-Code Keterangan
-HTTP_ERROR Server return status ≥ 400
-NETWORK_ERROR Koneksi gagal
-TIMEOUT Request melebihi timeout (TimeoutError)
-CANCELED Dibatalkan lewat AbortSignal (CanceledError)
-PROXY_ERROR Proxy CONNECT/tunnel gagal (ProxyError)
-TOO_MANY_REDIRECTS Redirect loop atau melebihi maxRedirects
-INVALID_URL URL tidak valid
-DECOMPRESS_ERROR Gagal decompress response body
-
----
-
-Accessing Meta (_ryna)
-
-Hasil semua modul tersimpan di property _ryna yang non-enumerable — tidak muncul saat console.log/JSON.stringify, tapi bisa diakses langsung.
-
-```js
-const data = await scraper.extract(url, schema);
-
-console.log(data);
-
-const meta = data._ryna;
-
-meta.responseType;
-meta.cache?.hit;
-meta.health?.alerts;
-meta.diff?.changes;
-meta.validation?.errors;
-meta.validation?.warnings;
 ```
 
 ---
 
 Testing
 
-Library ini punya test suite sendiri (78 test) yang jalan 100% lokal — nggak butuh akses internet sama sekali. Cocok dites di Termux/CI/offline.
+189 tests, 100% local — no internet required. Works in Termux/CI/offline.
 
 ```bash
 npm test
 ```
 
-Yang dites: HTTP fetch (redirect, gzip, timeout, abort), proxy CONNECT tunnel via local forward-proxy + self-signed HTTPS server, cookie roundtrip, retry backoff terhadap endpoint yang sengaja dibikin flaky, cache TTL/eviction, rate limiter timing, proxy rotator strategy, JSON path extraction, schema validation, health monitor alerting, diff detection, fingerprint randomization, webhook delivery, dan export ke semua format — plus integration test end-to-end lewat Ryna.extract/batch/paginate/login/discover/export.
-
-Kalau openssl nggak ketemu di environment lo, test yang butuh HTTPS-via-proxy otomatis di-skip (bukan fail) — sisanya tetap jalan penuh.
-
 ---
 
 Examples
 
-E-commerce dengan full reliability + proxy + cache
+Fundamentals — fetch, load, extract together
 
 ```js
 const sengkrep = require('sengkrep-ryna');
 
+const res = await sengkrep.fetch('https://example.com/product/1');
+const $   = sengkrep.load(res.body);
+
+if ($('.out-of-stock').length > 0) {
+  console.log('Out of stock, skip');
+} else {
+  const data = await sengkrep.extract('https://example.com/product/1', {
+    name:  { selector: ['h1.name', 'h1'] },
+    price: { selector: ['.price-v2', '.price'], required: true },
+  });
+  console.log(data);
+}
+```
+
+Full reliability with fallback selectors
+
+```js
 const scraper = sengkrep.create({
-  logLevel: 'info',
-  cache: { ttl: 1800 },
-  proxies: ['http://proxy1:8080', 'http://proxy2:8080'],
-  proxyStrategy: 'sticky',
-  rateLimit: { requestsPerSecond: 2 },
-  fingerprint: { userAgent: 'random', rotateUAOnEachRequest: true },
-  retry: { max: 3, retryOn: [429, 500, 502, 503] },
-
-  health: {
-    alertThreshold: 0.4,
-    onAlert: ({ url, alerts }) => alerts.forEach(a => console.error(`[HEALTH] ${url}: ${a.message}`)),
-  },
-
-  diff: {
-    onDiff: ({ url, changes, hasCritical }) => {
-      if (hasCritical) console.error(`[DIFF] Critical changes at ${url}!`);
-    },
-  },
-
-  validate: {
-    name:   { required: true, minLength: 2 },
-    price:  { required: true, pattern: /^Rp[\d.,]+$/ },
-    rating: { type: 'number' },
-  },
+  retry: { max: 3 },
+  circuitBreaker: { threshold: 5 },
+  health: { onAlert: ({ alerts }) => alerts.forEach(a => console.error(a.message)) },
+  diff:   { onDiff: ({ hasCritical }) => { if (hasCritical) console.error('Structure changed!'); } },
 });
 
-const product = await scraper.extract('https://example-store.com/product/laptop-x', {
-  name:   'h1.product-name',
-  price:  '.price-display',
-  rating: '.rating-value',
-  stock:  '.stock-status',
-  images: ['img.product-gallery'],
+const product = await scraper.extract(url, {
+  name:  { selector: ['h1.product-title', 'h1', '.title'], required: true },
+  price: { selector: ['.price-now', '.price'], pattern: /^[Rp$£][\d.,]+$/ },
 });
 ```
 
-Situs login-walled
+Resumable crawl of millions of pages
 
 ```js
-const scraper = sengkrep.create({ cookies: true, logLevel: 'info' });
+const scraper = sengkrep.create({ rateLimit: { requestsPerSecond: 3 }, cache: { ttl: 3600 } });
 
-const loggedIn = await scraper.login('https://example.com/login', {
+const job = scraper.crawl({
+  seed: 'https://example-blog.com',
+  schema: { title: 'h1', content: { selector: '.post-content', type: 'html' } },
+  follow: /\/post\//,
+  maxUrls: 100000,
+  stateFile: './blog-crawl.json',
+});
+
+job.on('progress', ({ done, queued }) => process.stdout.write(`\r${done} done, ${queued} queued`));
+
+await job.start();
+```
+
+If this process dies mid-way, run the same script again and call job.resume() — resumes from where it left off, not from zero.
+
+Login-walled site with sessions
+
+```js
+const scraper = sengkrep.create({ cookies: true });
+
+const ok = await scraper.login('https://example.com/login', {
   username: 'qrtz',
   password: process.env.SCRAPE_PASSWORD,
 });
 
-if (!loggedIn) throw new Error('Login gagal, cek kredensial');
-
-const orders = await scraper.paginate(
-  'https://example.com/account/orders?page=1',
-  { nextSelector: '.pagination-next', itemsSelector: '.order-row', maxPages: 50 },
-  { orderId: '.order-id', total: '.order-total', status: '.order-status' },
-);
+if (ok) {
+  const orders = await scraper.paginate(
+    'https://example.com/account/orders',
+    { nextSelector: 'auto', itemsSelector: '.order-row', maxPages: 50 },
+    { id: '.order-id', total: '.order-total' },
+  );
+}
 ```
 
-JSON API scraping (situs yang data-nya dari XHR/fetch)
+Internal JSON API (not HTML)
 
 ```js
-const scraper = sengkrep.create({ logLevel: 'info' });
-
 const data = await scraper.extract('https://example.com/api/v2/products?page=1', {
-  products: 'data.products[].name',
-  prices:   'data.products[].price.amount',
+  products: { path: ['data.products[].name', 'products[].name'] },
   total:    'meta.total_count',
 }, { responseType: 'json' });
-
-console.log(data.products.length, 'produk,', data.total, 'total');
 ```
 
-Full-site crawl pakai sitemap discovery + export
+Structured data (JSON-LD) — most reliable for e-commerce
 
 ```js
-const scraper = sengkrep.create({
-  rateLimit: { requestsPerSecond: 3 },
-  cache: { ttl: 3600 },
-});
-
-const urls = await scraper.discover('https://example-blog.com', { pattern: /\/post\// });
-
-await scraper.export(urls, {
-  title:   'h1',
-  content: { selector: '.post-content', type: 'html' },
-  author:  '.author-name',
-  date:    'time[datetime]',
-}, {
-  format: 'markdown',
-  path: './output/all-posts.md',
-  concurrency: 5,
-});
-```
-
-News batch scraper dengan diff detection + webhook
-
-```js
-const scraper = sengkrep.create({
-  diff: {
-    sensitivity: 'value',
-    onDiff: ({ url, changes }) => {
-      if (changes.some(c => c.type === 'value_changed')) console.log(`Article updated: ${url}`);
-    },
-  },
-  webhook: { onError: 'https://your-api.com/scraping-error' },
-  retry: { max: 2 },
-  delay: 600,
-});
-
-const results = await scraper.batch(articleUrls, {
-  headline: 'h1.article-title',
-  author:   '.byline-name',
-  date:     'time[datetime]',
-  content:  { selector: '.article-body', type: 'html' },
-}, {
-  concurrency: 2,
-  delay: 1000,
-  onProgress: (done, total) => process.stdout.write(`\r${done}/${total}`),
-});
-```
-
-Pakai modul standalone tanpa Ryna instance
-
-```js
-const { Fingerprint, HealthMonitor, DiffDetector, SchemaValidator, ProxyRotator, JsonExtractor } = require('sengkrep-ryna');
-
-const fp      = new Fingerprint({ userAgent: 'random' });
-const headers = fp.buildHeaders({ 'X-Forwarded-For': '8.8.8.8' });
-
-const monitor = new HealthMonitor({ alertThreshold: 0.4 });
-monitor.record('https://example.com', {
-  title: { selector: 'h1', empty: false, count: 1 },
-  price: { selector: '.price', empty: true, count: 0 },
-});
-
-const rotator = new ProxyRotator({ proxies: ['http://p1:8080', 'http://p2:8080'], strategy: 'random' });
-const proxy   = rotator.next('example.com');
-
-const je = new JsonExtractor();
-const { data } = je.extract({ items: [{ n: 1 }, { n: 2 }] }, { values: 'items[].n' });
+const products = await scraper.extractJsonLd('https://shop.example.com/product/1');
+console.log(products[0].name, products[0].offers?.price);
 ```
 
 ---
@@ -1096,79 +779,72 @@ Architecture
 
 ```
 sengkrep-ryna/
-├── index.js                    Entry point + convenience API
-├── example.js                  Runnable quick-start demo
-├── test/
-│   ├── server.js                Local HTTP/HTTPS/proxy fixtures (zero external network)
-│   ├── run.js                   Unit tests — module-level
-│   └── integration.js           Integration tests — full Ryna orchestration
+├── index.js                 Entry point + convenience API
+├── bin/sengkrep-ryna.js      CLI
+├── test/                     189 tests, zero external network
 └── src/
-    ├── Ryna.js                  Orchestrator utama
+    ├── Ryna.js                Main orchestrator
     ├── core/
-    │   ├── Fetcher.js            HTTP client (proxy, cookies, abort, interceptors, decompress)
-    │   ├── ProxyTunnel.js        CONNECT tunnel native (zero dependency)
-    │   ├── Extractor.js          HTML extraction engine (cheerio)
-    │   ├── JsonExtractor.js      JSON path extraction engine
-    │   └── Retry.js              Adaptive retry per-status strategy
-    └── modules/
-        ├── Fingerprint.js        UA rotation, header randomization, timing jitter
-        ├── SchemaValidator.js    Validasi data hasil ekstraksi
-        ├── HealthMonitor.js      Selector health tracking
-        ├── DiffDetector.js       Structural diff detection
-        ├── Cache.js              TTL response cache
-        ├── CookieJar.js          Session/cookie persistence
-        ├── ProxyRotator.js       Proxy pool strategy + health tracking
-        ├── RateLimiter.js        Per-hostname token bucket
-        ├── Interceptors.js       Request/response middleware chain
-        ├── Discover.js           Sitemap + robots.txt crawler
-        └── Webhook.js            Lifecycle event notifier
-    └── utils/
-        ├── logger.js              Colored leveled logger
-        ├── storage.js             JSON file storage (DiffDetector + disk Cache)
-        └── exporter.js            CSV/JSON/NDJSON/Markdown writers
+    │   ├── Fetcher.js          HTTP/1.1 client — keep-alive, streaming decompress,
+    │   │                       binary detection, stream-to-file, proxy, cookies
+    │   ├── Http2Fetcher.js     HTTP/2 client — session pool per origin, multiplexing
+    │   ├── ProxyTunnel.js      CONNECT tunnel native
+    │   ├── Extractor.js        HTML extraction — fallback selector chains
+    │   ├── JsonExtractor.js    JSON path extraction — fallback path chains
+    │   └── Retry.js            Adaptive per-status backoff
+    └── modules/                27 modules: Fingerprint, SchemaValidator, HealthMonitor,
+    │                           DiffDetector, Cache, CookieJar, ProxyRotator, RateLimiter,
+    │                           Interceptors, Discover, SecurityGuard, CircuitBreaker,
+    │                           Incremental, CsrfHandler, AuthManager, SessionPool,
+    │                           PluginSystem, CrawlQueue, Observability, HarRecorder,
+    │                           WordPress, GraphQLClient, DnsCache, FormHandler,
+    │                           ProgressBar, PaginationDetector, Webhook
+    └── utils/                  logger, storage, exporter, contentHandlers (RSS/CSV),
+                                microdata (JSON-LD), scriptExtractor, urlUtils,
+                                streamWriter, contentSafety (charset/binary), encodingUtils
 ```
 
 Request flow:
 
 ```
 scraper.extract(url, schema)
-  └── _resolveUrl (baseURL) + _applyParams (query string)
-  └── Cache.get() → HIT? return cached response
+  └── plugins.run('beforeRequest')
+  └── SecurityGuard.check()          (SSRF guard, opt-in)
+  └── CircuitBreaker.assertCanRequest()
+  └── Cache.get() → HIT? return cached
   └── Retry.run()
-      └── RateLimiter.acquire(hostname)
-      └── ProxyRotator.next(hostname)
-      └── Fetcher.fetch()
-          └── Interceptors.request.run(config)
-          └── Fingerprint.buildHeaders()
-          └── CookieJar.getCookieHeader() / setFromHeaders()
-          └── ProxyTunnel (CONNECT for https, forward route for http)
-          └── Decompress response (gzip/br/deflate)
-          └── Interceptors.response.run(raw) / runError(err)
-  └── Cache.set()
-  └── _looksLikeJson() → Extractor (cheerio) atau JsonExtractor (path)
-  └── HealthMonitor.record()
-  └── DiffDetector.check()
-  └── SchemaValidator.validate()
-  └── Webhook.fire('onComplete' | 'onError')
-  └── Return { ...data, _ryna: { cache, responseType, health, diff, validation } }
+      └── RateLimiter.acquire() / ProxyRotator.next()
+      └── Fetcher / Http2Fetcher
+          └── Interceptors.request.run()
+          └── Fingerprint.buildHeaders()  +  CookieJar  +  AuthManager
+          └── DnsCache.lookup()  (opt-in)
+          └── decompress (gzip/br/deflate/zstd) as stream
+          └── contentSafety.inspect()  →  binary? stream-to-file? charset decode
+          └── Interceptors.response.run()
+      └── on 401: AuthManager.refresh() → retry once
+  └── Extractor / JsonExtractor / RSS / CSV  (responseType auto-detect)
+  └── HealthMonitor.record()  +  DiffDetector.check()  +  SchemaValidator.validate()
+  └── plugins.run('afterExtract')
+  └── Observability.recordSuccess/Failure()
+  └── return { ...data, _ryna: { health, diff, validation, cache, responseType } }
 ```
 
 ---
 
 Tips & Troubleshooting
 
-Selector return null padahal di browser ada datanya — kemungkinan besar situsnya render via JavaScript (client-side rendering). sengkrep-ryna cuma parsing HTML mentah, nggak menjalankan JS. Cek view-source: di browser; kalau datanya nggak ada di situ, coba cari endpoint JSON internal-nya lewat tab Network di DevTools dan pakai responseType: 'json' dengan JsonExtractor — biasanya lebih stabil daripada scraping HTML yang di-render JS sekalipun pakai headless browser.
+Getting garbled/binary garbage from scrape — likely the response wasn't decompressed (gzip/br/zstd that failed), or it's actually a binary file (image/font) being incorrectly treated as text. extract() now auto-detects this and throws a clear BINARY_RESPONSE error with what it actually is (via magic-byte sniffing), instead of returning corrupted strings. If you need raw bytes, pass { allowBinary: true }.
 
-Proxy auth gagal terus — format URL proxy yang didukung: http://user:pass@host:port. Pastikan username/password di-encodeURIComponent kalau mengandung karakter spesial (@, :, /).
+Scraped text looks like mojibake — site likely uses non-UTF-8 charset (Shift-JIS, GBK, etc.). This is now auto-handled via BOM/header/meta-tag detection. If still broken, check data._ryna — though charset field isn't yet exposed for plain text, scraper.fetch() returns res.charset for manual debugging.
 
-rejectUnauthorized: false itu buat apa — cuma buat proxy/target dengan self-signed certificate (internal tools, dev environment). Jangan dipakai ke situs publik di production, itu menghilangkan validasi certificate sepenuhnya.
+Selector returns null despite data existing in browser — site is likely client-side rendered (JavaScript), and sengkrep-ryna only parses raw HTML. Check view-source: in browser; if data isn't there, find the internal JSON endpoint via DevTools Network tab and use responseType: 'json'.
 
-Cache nggak ke-invalidate pas saya butuh data fresh — panggil scraper.cache.delete(url) atau scraper.cache.clear() sebelum extract, atau set ttl lebih pendek untuk data yang sering berubah.
+Pagination stops before the last page — try nextSelector: 'auto', the detector handles common patterns (rel="next", "Next" text, .pagination-next class, and URL numbers). If the site uses a very custom pattern, you'll still need an explicit selector.
 
-Health monitor / diff detector kelihatan "noisy" di awal — wajar, butuh beberapa run dulu (windowSize) buat punya baseline yang reliable. First run selalu firstRun: true tanpa alert.
+Proxy auth keeps failing — supported format: http://user:pass@host:port. Encode special characters in password (@, :, /) with encodeURIComponent.
 
 ---
 
 License
 
-MIT © rynaqrtz
+MIT © qrtz

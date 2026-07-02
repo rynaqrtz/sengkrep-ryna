@@ -1,6 +1,9 @@
 node_modules/
 .sengkrep-ryna/
+.sengkrep-ryna-*/
 *.log
+*.har
 .DS_Store
 test/.cert.pem
 test/.key.pem
+output/

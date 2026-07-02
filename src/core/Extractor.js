@@ -68,12 +68,21 @@ class Extractor {
   }
 
   _extract($, def) {
-    const els = $(def.selector);
-    if (els.length === 0) return def.multiple ? [] : null;
-    if (def.multiple) {
-      return els.map((_, el) => this._pull($, el, def)).get();
+    const selectors = Array.isArray(def.selector) ? def.selector : [def.selector];
+
+    for (const sel of selectors) {
+      const els = $(sel);
+      if (els.length === 0) continue;
+
+      const value = def.multiple
+        ? els.map((_, el) => this._pull($, el, def)).get()
+        : this._pull($, els.first().get(0), def);
+
+      const isEmpty = value === null || value === '' || (Array.isArray(value) && value.length === 0);
+      if (!isEmpty) return { value, usedSelector: sel, tried: selectors };
     }
-    return this._pull($, els.first().get(0), def);
+
+    return { value: def.multiple ? [] : null, usedSelector: null, tried: selectors };
   }
 
   load(html) {
@@ -87,21 +96,23 @@ class Extractor {
     const health = {};
 
     for (const [key, def] of Object.entries(defs)) {
-      const value   = this._extract($, def);
+      const { value, usedSelector, tried } = this._extract($, def);
       const isEmpty = value === null || value === '' || (Array.isArray(value) && value.length === 0);
 
       health[key] = {
-        selector: def.selector,
-        empty:    isEmpty,
-        count:    Array.isArray(value) ? value.length : (isEmpty ? 0 : 1),
+        selector:     usedSelector ?? tried[0],
+        selectorsTried: tried.length > 1 ? tried : undefined,
+        empty:        isEmpty,
+        count:        Array.isArray(value) ? value.length : (isEmpty ? 0 : 1),
       };
 
       if (isEmpty) {
         if (def.required) {
+          const attempted = tried.length > 1 ? tried.map(s => `"${s}"`).join(', ') : `"${tried[0]}"`;
           throw new ExtractionError(
-            `Required field "${key}" returned empty (selector: "${def.selector}")`,
+            `Required field "${key}" returned empty (tried selector${tried.length > 1 ? 's' : ''}: ${attempted})`,
             key,
-            def.selector,
+            tried[0],
           );
         }
         data[key] = def.default;

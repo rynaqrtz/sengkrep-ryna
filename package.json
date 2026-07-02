@@ -1,8 +1,11 @@
 {
   "name": "sengkrep-ryna",
-  "version": "2.0.4",
-  "description": "Scraping reliability layer for Node.js — schema validation, selector health monitoring, adaptive retry, fingerprint randomization, diff detection, response caching, cookie sessions, proxy rotation, rate limiting, interceptors, and JSON API extraction.",
+  "version": "3.1.0",
+  "description": "Scraping reliability layer for Node.js — schema validation, selector health monitoring, adaptive retry, fingerprint randomization, diff detection, caching, sessions, proxy rotation, HTTP/2, circuit breaker, resumable crawling, and safe binary/charset handling.",
   "main": "index.js",
+  "bin": {
+    "sengkrep-ryna": "./bin/sengkrep-ryna.js"
+  },
   "keywords": [
     "web-scraping",
     "scraper",
@@ -18,10 +21,15 @@
     "rate-limiter",
     "interceptors",
     "json-extraction",
-    "sitemap"
+    "http2",
+    "circuit-breaker",
+    "crawler",
+    "charset",
+    "json-ld",
+    "microdata"
   ],
   "scripts": {
-    "test": "node test/run.js && node test/integration.js",
+    "test": "node test/run.js && node test/integration.js && node test/v3.js && node test/v3.1.js",
     "example": "node example.js"
   },
   "author": "qrtz",
@@ -30,6 +38,6 @@
     "cheerio": "^1.0.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }
