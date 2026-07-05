@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const sengkrep = require('../index');
 const fs       = require('fs');
 
