@@ -1,10 +1,7 @@
 <div align="center">
 
-<!-- ============================================================ -->
-<!--  BANNER — replace src="#" with your banner image path        -->
-<!-- ============================================================ -->
-<a href="#">
-  <img src="#" alt="sengkrep-ryna" width="100%" />
+<a href="https://i.postimg.cc/0ykVqtwd/sengkrep-ryna.gif">
+  <img src="https://i.postimg.cc/0ykVqtwd/sengkrep-ryna.gif" alt="sengkrep-ryna" width="100%" />
 </a>
 
 <br /><br />
