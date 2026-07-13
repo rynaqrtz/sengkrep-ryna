@@ -1,6 +1,6 @@
 {
   "name": "sengkrep-ryna",
-  "version": "3.3.2",
+  "version": "3.4.0",
   "description": "A reliability layer for web scraping in Node.js: schema validation, selector health monitoring, adaptive retry, fingerprint randomization, diff detection, caching, session management, proxy rotation, HTTP/2, circuit breaker, resumable crawling, schema inference, distributed job queues, and full TypeScript definitions.",
   "main": "index.js",
   "types": "index.d.ts",
@@ -28,12 +28,13 @@
     "circuit-breaker",
     "crawler",
     "distributed-queue",
+    "robots-txt",
     "charset",
     "json-ld",
     "microdata"
   ],
   "scripts": {
-    "test": "node test/run.js && node test/integration.js && node test/v3.js && node test/v3.1.js && node test/v3.2.js",
+    "test": "node test/01-fetcher-and-extraction.js && node test/02-orchestration.js && node test/03-reliability-modules.js && node test/04-content-safety-and-utils.js && node test/05-bugfixes-and-schema-inference.js && node test/06-robots-retry-pagination.js",
     "example": "node example.js"
   },
   "author": "qrtz",

@@ -1,7 +1,10 @@
 <div align="center">
 
-<a href="https://i.postimg.cc/0ykVqtwd/sengkrep-ryna.gif">
-  <img src="https://i.postimg.cc/0ykVqtwd/sengkrep-ryna.gif" alt="sengkrep-ryna" width="100%" />
+<!-- ============================================================ -->
+<!--  BANNER — replace src="#" with your banner image path        -->
+<!-- ============================================================ -->
+<a href="#">
+  <img src="#" alt="sengkrep-ryna" width="100%" />
 </a>
 
 <br /><br />
@@ -17,11 +20,23 @@ the layer that keeps your scraper running when everything else breaks.</p>
 [![node](https://img.shields.io/badge/node-%3E%3D18-black?style=flat-square)](https://nodejs.org)
 [![types](https://img.shields.io/badge/types-included-black?style=flat-square)](./index.d.ts)
 [![dependencies](https://img.shields.io/badge/dependencies-1-black?style=flat-square)](./package.json)
-[![tests](https://img.shields.io/badge/tests-224%20passing-black?style=flat-square)](./test)
+[![tests](https://img.shields.io/badge/tests-244%20passing-black?style=flat-square)](./test)
 
 </div>
 
 ---
+
+## What's New in 3.4.0
+
+This release focuses on a class of bug that is easy to miss in testing but costly in production: silent politeness and reliability gaps that only show up after a scraper has been running against a real target for a while.
+
+| Problem found | Fix |
+|---|---|
+| `Retry-After` response header was ignored — the library used its own backoff even when the server explicitly said how long to wait | Retry now honors `Retry-After` (both delta-seconds and HTTP-date formats) by default, capped at `maxRetryAfter` |
+| A connection dropped mid-response could surface as a vague "socket hang up" and, in edge cases, risked returning partial data as if it were complete | Responses are now verified via Node's own `res.complete` signal and fail clearly with `TRUNCATED_RESPONSE` instead |
+| No way to check whether a path was disallowed before requesting it | `scraper.isAllowed(url)` and `scraper.getCrawlDelay(origin)` parse `robots.txt` `Disallow`/`Allow`/`Crawl-delay` directives; `crawl({ respectRobotsTxt: true })` applies this automatically |
+| Broken pagination on some sites repeats the last page forever instead of stopping, wasting requests and producing duplicate data | `paginate()` now hashes each page's extracted content and stops automatically when a page is identical to the one before it (`stopOnDuplicate`, on by default) |
+| Rate-limit headers (`RateLimit-Remaining`, `X-RateLimit-Remaining`, etc.) were fetched but never surfaced | Now exposed at `data._ryna.rateLimit` on every `extract()` call, so you can throttle proactively instead of waiting for a `429` |
 
 ## Table of Contents
 
@@ -401,6 +416,20 @@ const urls = await scraper.discover('https://example.com', { pattern: /\/product
 
 Returns an empty array if the target has no sitemap — that is correct, expected behavior, not an error.
 
+### `isAllowed(url, userAgent?)`
+
+Checks whether `url` is permitted by the target's `robots.txt`. See [robots.txt Compliance](#robotstxt-compliance) for matching rules.
+
+```js
+if (await scraper.isAllowed(url)) {
+  await scraper.extract(url, schema);
+}
+```
+
+### `getCrawlDelay(origin, userAgent?)`
+
+Returns the `Crawl-delay` value (in milliseconds) declared in `robots.txt` for the given origin, or `null` if none is declared.
+
 ### `export(input, schema?, options?)`
 
 Scrapes and serializes to a file in one call. `input` can be a single URL, an array of URLs, or data you already extracted.
@@ -528,10 +557,16 @@ scraper.create({
     retryOn: [408, 429, 500, 502, 503, 504, 403],
     retryOnNetwork: true,
     retryOnTimeout: true,
-    onRetry: ({ attempt, status, code, waitMs }) => {},
+    respectRetryAfter: true,   // honor a server-provided Retry-After header over the computed backoff
+    maxRetryAfter: 300000,     // cap how long a Retry-After value is allowed to make us wait (5 min default)
+    onRetry: ({ attempt, status, code, waitMs, respectedRetryAfter }) => {},
   },
 });
 ```
+
+When a `429` or `503` response includes a `Retry-After` header (either `Retry-After: 120` or an HTTP-date like `Retry-After: Wed, 21 Oct 2026 07:28:00 GMT`), that value is used instead of the computed backoff — this is what the server explicitly asked for, and following it is both more polite and more effective at avoiding an escalating block. Set `respectRetryAfter: false` to always use the computed backoff instead.
+
+**Truncated response detection** — a connection that drops mid-transfer is verified using Node's own `res.complete` signal rather than trusted blindly. Instead of surfacing as a vague `NETWORK_ERROR` (or, worse, silently returning partial data), it's reported as a `TRUNCATED_RESPONSE` error, which is retried automatically like any other transient failure. Disable with `{ verifyLength: false }` passed to `fetch()`/`extract()`'s `request` options if you specifically need best-effort partial data instead of an error (only effective when the connection ends cleanly rather than being forcibly reset, since a hard reset has no bytes to return either way).
 
 ### Circuit Breaker
 
@@ -597,6 +632,42 @@ Skips re-processing a page when the server confirms nothing has changed (`304 No
 
 ```js
 scraper.create({ incremental: true });
+```
+
+### robots.txt Compliance
+
+Checks `Disallow`/`Allow`/`Crawl-delay` directives before requesting a path.
+
+```js
+const allowed = await scraper.isAllowed('https://example.com/private/page');
+const delay   = await scraper.getCrawlDelay('https://example.com');
+```
+
+Rule matching follows the common convention used by major crawlers: the longest matching pattern wins, and an `Allow` rule wins a tie against a `Disallow` rule of the same length. Supports `*` wildcards and `$` end-anchors. `robots.txt` is fetched once per origin and cached for the lifetime of the scraper instance.
+
+Apply it automatically during a crawl:
+
+```js
+const job = scraper.crawl({
+  seed: 'https://example.com',
+  schema: { title: 'h1' },
+  respectRobotsTxt: true,
+  userAgent: 'my-bot',   // matched against User-agent groups in robots.txt; defaults to '*'
+});
+```
+
+Disallowed URLs are skipped and reported via the `'url:error'` event with `error.code === 'ROBOTS_DISALLOWED'`, rather than silently vanishing from the results.
+
+### Pagination Duplicate Detection
+
+Some sites keep serving their last page of results indefinitely instead of stopping or returning a 404 once you page past the end — a common bug in older CMS and e-commerce pagination widgets. `paginate()` hashes each page's extracted content and stops automatically when a page is identical to the one immediately before it.
+
+```js
+const items = await scraper.paginate(startUrl, {
+  nextSelector: 'auto',
+  maxPages: 50,
+  stopOnDuplicate: true,   // default; set to false if repeated content is expected and fine
+}, schema);
 ```
 
 ---
@@ -932,7 +1003,7 @@ const scraper = sengkrep.create({
 
   fingerprint: { userAgent: 'random', rotateUAOnEachRequest: true, randomizeHeaderOrder: true, randomizeTiming: true },
 
-  retry: { max: 3, jitter: true, retryOn: [408, 429, 500, 502, 503, 504, 403], retryOnNetwork: true, retryOnTimeout: true },
+  retry: { max: 3, jitter: true, retryOn: [408, 429, 500, 502, 503, 504, 403], retryOnNetwork: true, retryOnTimeout: true, respectRetryAfter: true, maxRetryAfter: 300000 },
 
   health: { alertThreshold: 0.5, windowSize: 10, onAlert: null },      // or `false` to disable
   diff:   { storageDir: '.sengkrep-ryna', sensitivity: 'structural', onDiff: null, maxHistory: 500 }, // or `false`
@@ -995,6 +1066,7 @@ const { errors } = require('sengkrep-ryna');
 | `CanceledError` | `CANCELED` | Aborted via `AbortSignal` |
 | `FetchError` | `NETWORK_ERROR` | Connection failed |
 | `FetchError` | `UNSUPPORTED_ENCODING` | Server used a `Content-Encoding` this Node runtime cannot decompress |
+| `FetchError` | `TRUNCATED_RESPONSE` | Connection dropped before the response finished (retried automatically) |
 | `ProxyError` | `PROXY_ERROR` | Proxy CONNECT/tunnel failed |
 | `SecurityError` | `SECURITY_BLOCKED` | Request blocked by `SecurityGuard` (SSRF protection) |
 | `CircuitOpenError` | `CIRCUIT_OPEN` | Circuit breaker is open for this domain (`err.retryAt` has the retry timestamp) |
@@ -1002,6 +1074,7 @@ const { errors } = require('sengkrep-ryna');
 | `JsonExtractionError` | — | A `required` JSON field was empty (`err.field`, `err.path`) |
 | `ValidationError` | — | Schema validation failed in strict mode (`err.errors`) |
 | — | `BINARY_RESPONSE` | Response was detected as binary content (`err.meta.sniffedType`) |
+| — | `ROBOTS_DISALLOWED` | A crawled URL was blocked by `robots.txt` (only with `respectRobotsTxt: true`) |
 
 ```js
 try {
@@ -1021,11 +1094,22 @@ try {
 
 ## Testing
 
-The package ships with 224 tests that run entirely locally against fixture servers — no external network access is required, making them safe to run in CI, offline, or in restricted environments like Termux.
+The package ships with 244 tests that run entirely locally against fixture servers — no external network access is required, making them safe to run in CI, offline, or in restricted environments like Termux.
 
 ```bash
 npm test
 ```
+
+Test files are organized by concern rather than by version history:
+
+| File | Covers |
+|---|---|
+| `01-fetcher-and-extraction.js` | Core HTTP client, HTML/JSON extraction, retry backoff |
+| `02-orchestration.js` | The `Ryna` orchestrator, batching, pagination, login |
+| `03-reliability-modules.js` | Circuit breaker, health monitor, crawl queue, observability |
+| `04-content-safety-and-utils.js` | Charset/binary detection, encoding utilities, HTTP/2 |
+| `05-bugfixes-and-schema-inference.js` | Regression tests, schema inference, distributed queue |
+| `06-robots-retry-pagination.js` | `Retry-After`, truncated responses, `robots.txt`, duplicate pagination |
 
 ---
 
@@ -1092,11 +1176,11 @@ if (ok) {
 sengkrep-ryna/
 ├── index.js / index.d.ts     Entry point + TypeScript definitions
 ├── bin/sengkrep-ryna.js       CLI
-├── test/                       224 tests, no external network dependency
+├── test/                       244 tests, no external network dependency
 └── src/
     ├── Ryna.js                  Orchestrator — wires every module together
     ├── core/                     Fetcher, Http2Fetcher, ProxyTunnel, Extractor, JsonExtractor, Retry
-    ├── modules/                  30 modules: reliability, identity, performance, and operational tooling
+    ├── modules/                  29 modules: reliability, identity, performance, and operational tooling
     └── utils/                    contentSafety, encodingUtils, microdata, scriptExtractor,
                                   urlUtils, streamWriter, exporter, contentHandlers
 ```
@@ -1110,9 +1194,11 @@ plugins.beforeRequest → SecurityGuard → CircuitBreaker → Cache.get()
       → Fetcher / Http2Fetcher
           → Interceptors.request → Fingerprint headers → CookieJar → AuthManager
           → decompress as a stream (throws UNSUPPORTED_ENCODING on unknown encodings)
+          → verify response completeness via res.complete (throws TRUNCATED_RESPONSE if dropped)
           → contentSafety: binary? stream to disk? decode charset?
           → Interceptors.response
       → on 401: AuthManager.refresh() → retry once
+      → on 429/503 with Retry-After: honor server-specified wait time over computed backoff
   → Extractor / JsonExtractor / RSS / CSV parser (auto-detected, fallback selector chains)
   → HealthMonitor + DiffDetector + SchemaValidator + plugins.afterExtract
   → Observability.record + Webhook.fire

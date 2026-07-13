@@ -16,6 +16,8 @@ class Retry {
     this.retryOn          = options.retryOn          ?? [408, 429, 500, 502, 503, 504, 403];
     this.retryOnNetwork   = options.retryOnNetwork   ?? true;
     this.retryOnTimeout   = options.retryOnTimeout   ?? true;
+    this.respectRetryAfter = options.respectRetryAfter ?? true;
+    this.maxRetryAfter     = options.maxRetryAfter     ?? 5 * 60 * 1000;
     this.onRetry          = options.onRetry          ?? null;
   }
 
@@ -24,10 +26,16 @@ class Retry {
     return ms * (0.65 + Math.random() * 0.7);
   }
 
-  _delay(status, attempt) {
-    const s   = STRATEGIES[status] ?? STRATEGIES.default;
+  _delay(err, attempt) {
+    const usedRetryAfter = this.respectRetryAfter && typeof err.retryAfterMs === 'number';
+
+    if (usedRetryAfter) {
+      return { ms: Math.min(err.retryAfterMs, this.maxRetryAfter), usedRetryAfter: true };
+    }
+
+    const s   = STRATEGIES[err.status] ?? STRATEGIES.default;
     const raw = s.baseDelay * Math.pow(s.multiplier, attempt - 1);
-    return Math.round(this._applyJitter(Math.min(raw, s.maxDelay)));
+    return { ms: Math.round(this._applyJitter(Math.min(raw, s.maxDelay))), usedRetryAfter: false };
   }
 
   _shouldRetry(err, retryCount) {
@@ -35,6 +43,7 @@ class Retry {
     if (retryCount > this.max) return false;
     if (err.code === 'NETWORK_ERROR' && this.retryOnNetwork)  return true;
     if (err.code === 'TIMEOUT'       && this.retryOnTimeout)  return true;
+    if (err.code === 'TRUNCATED_RESPONSE')                    return true;
     if (err.status && this.retryOn.includes(err.status))      return true;
     return false;
   }
@@ -52,10 +61,10 @@ class Retry {
 
         if (!this._shouldRetry(err, attempt)) throw err;
 
-        const wait = this._delay(err.status, attempt);
+        const { ms: wait, usedRetryAfter } = this._delay(err, attempt);
 
         if (this.onRetry) {
-          this.onRetry({ attempt, status: err.status, code: err.code, waitMs: wait });
+          this.onRetry({ attempt, status: err.status, code: err.code, waitMs: wait, respectedRetryAfter: usedRetryAfter });
         }
 
         await new Promise(r => setTimeout(r, wait));

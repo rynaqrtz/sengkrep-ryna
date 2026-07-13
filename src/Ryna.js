@@ -1,3 +1,5 @@
+const { parseRateLimitHeaders }             = require('./utils/rateLimitHeaders');
+const { createHash }                       = require('crypto');
 const { Fetcher }                          = require('./core/Fetcher');
 const { Http2Fetcher }                     = require('./core/Http2Fetcher');
 const { Extractor }                        = require('./core/Extractor');
@@ -333,6 +335,9 @@ class Ryna {
         responseType: parsedAs,
       };
 
+      const rateLimitInfo = parseRateLimitHeaders(res.headers);
+      if (rateLimitInfo) meta.rateLimit = rateLimitInfo;
+
       if (this.health && parsedAs !== 'feed' && parsedAs !== 'csv') {
         const report = this.health.record(url, health);
         meta.health  = report;
@@ -456,12 +461,15 @@ class Ryna {
       itemsSelector     = null,
       maxPages          = 10,
       delayBetweenPages = 1200,
+      stopOnDuplicate   = true,
     } = paginationConfig;
 
     const allItems = [];
-    let   url        = startUrl;
-    let   page       = 0;
-    let   detectedTotal = null;
+    let   url          = startUrl;
+    let   page         = 0;
+    let   detectedTotal  = null;
+    let   lastPageHash    = null;
+    let   duplicateStopped = false;
 
     while (url && page < maxPages) {
       this.logger.info(`[paginate] page ${page + 1}: ${url}`);
@@ -474,16 +482,30 @@ class Ryna {
         if (detectedTotal > 1) this.logger.info(`[paginate] detected ~${detectedTotal} total pages from pagination widget`);
       }
 
+      const pageItems = [];
+
       if (itemsSelector) {
         $(itemsSelector).each((_, el) => {
           const itemHtml        = $.html(el);
           const { data: item }  = this.extractor.extract(itemHtml, schema);
-          allItems.push(item);
+          pageItems.push(item);
         });
       } else {
         const { data } = this.extractor.extract(res.body, schema);
-        allItems.push(data);
+        pageItems.push(data);
       }
+
+      if (stopOnDuplicate) {
+        const pageHash = createHash('sha256').update(JSON.stringify(pageItems)).digest('hex');
+        if (page > 0 && pageHash === lastPageHash) {
+          this.logger.warn(`[paginate] page ${page + 1} content is identical to the previous page — stopping (the site likely repeats its last page instead of ending pagination). Pass { stopOnDuplicate: false } to disable this check.`);
+          duplicateStopped = true;
+          break;
+        }
+        lastPageHash = pageHash;
+      }
+
+      allItems.push(...pageItems);
 
       const nextHref = nextSelector === 'auto' ? null : $(nextSelector).attr('href');
       const detected = nextSelector === 'auto' ? detectNextLink($, url) : null;
@@ -499,7 +521,7 @@ class Ryna {
       }
     }
 
-    this.logger.info(`[paginate] done — ${page} pages, ${allItems.length} items`);
+    this.logger.info(`[paginate] done — ${page} pages, ${allItems.length} items${duplicateStopped ? ' (stopped early: duplicate page detected)' : ''}`);
     return allItems;
   }
 
@@ -550,6 +572,14 @@ class Ryna {
     return this.discoverer.run(origin, options);
   }
 
+  async isAllowed(url, userAgent = '*') {
+    return this.discoverer.isAllowed(url, userAgent);
+  }
+
+  async getCrawlDelay(origin, userAgent = '*') {
+    return this.discoverer.getCrawlDelay(origin, userAgent);
+  }
+
   async export(input, schema, options = {}) {
     let data;
 
@@ -576,10 +606,26 @@ class Ryna {
     const queue = new CrawlQueue(options);
 
     const visitFn = async (url) => {
+      if (options.respectRobotsTxt) {
+        const allowed = await this.isAllowed(url, options.userAgent ?? '*');
+        if (!allowed) {
+          this.logger.warn(`[crawl] skipped (disallowed by robots.txt): ${url}`);
+          const err = new Error(`Disallowed by robots.txt: ${url}`);
+          err.code  = 'ROBOTS_DISALLOWED';
+          throw err;
+        }
+      }
+
       const res  = await this._fetch(url);
       const $    = this.extractor.load(res.body);
       const { data } = this.extractor.extract(res.body, options.schema ?? {});
-      const links = extractLinks($, url, options.linkOptions ?? {});
+      let links = extractLinks($, url, options.linkOptions ?? {});
+
+      if (options.respectRobotsTxt) {
+        const checks = await Promise.all(links.map(l => this.isAllowed(l, options.userAgent ?? '*')));
+        links = links.filter((_, i) => checks[i]);
+      }
+
       return { data, links };
     };
 

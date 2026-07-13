@@ -126,7 +126,7 @@ function handler(req, res) {
 
   if (url.pathname === '/robots.txt') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    return res.end('User-agent: *\nSitemap: http://127.0.0.1:9911/sitemap.xml\n');
+    return res.end('User-agent: *\nDisallow: /private/\nAllow: /private/public-page\nCrawl-delay: 2\nSitemap: http://127.0.0.1:9911/sitemap.xml\n\nUser-agent: badbot\nDisallow: /\n');
   }
 
   if (url.pathname === '/items') {
@@ -338,6 +338,58 @@ function handler(req, res) {
       <div class="article-author">Budi Santoso</div>
       <div class="article-content">Ini adalah artikel tentang cara membuat kopi yang enak dan nikmat setiap pagi.</div>
       </body></html>`);
+  }
+
+  if (url.pathname === '/retry-after-seconds') {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '1' });
+    return res.end(JSON.stringify({ error: 'slow down' }));
+  }
+
+  if (url.pathname === '/truncated') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.write('{"incomplete": "data"');
+    setImmediate(() => res.destroy());
+    return;
+  }
+
+  if (url.pathname === '/private/secret') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<h1>secret</h1>');
+  }
+
+  if (url.pathname === '/private/public-page') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<h1>allowed</h1>');
+  }
+
+  if (url.pathname === '/public-page') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<h1>public</h1>');
+  }
+
+  if (url.pathname === '/rate-limited-api') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'RateLimit-Limit': '100', 'RateLimit-Remaining': '3', 'RateLimit-Reset': '60' });
+    return res.end(JSON.stringify({ ok: true }));
+  }
+
+  if (url.pathname === '/dup-page-1') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Item A</h1><a class="next" href="/dup-page-2">next</a></body></html>');
+  }
+
+  if (url.pathname === '/dup-page-2') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Item B</h1><a class="next" href="/dup-page-3">next</a></body></html>');
+  }
+
+  if (url.pathname === '/dup-page-3') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Item B</h1><a class="next" href="/dup-page-3b">next</a></body></html>');
+  }
+
+  if (url.pathname === '/dup-page-3b') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    return res.end('<html><body><h1>Item B</h1><a class="next" href="/dup-page-4">next</a></body></html>');
   }
 
   res.writeHead(404);

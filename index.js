@@ -64,6 +64,8 @@ sengkrep.export   = (input, schema, options)                       => _default.e
 sengkrep.crawl    = (options)                                       => _default.crawl(options);
 sengkrep.submitForm = (url, formSelector, overrides)                 => _default.submitForm(url, formSelector, overrides);
 sengkrep.inferSchema = (url, options)                                  => _default.inferSchema(url, options);
+sengkrep.isAllowed = (url, userAgent)                                   => _default.isAllowed(url, userAgent);
+sengkrep.getCrawlDelay = (origin, userAgent)                             => _default.getCrawlDelay(origin, userAgent);
 
 sengkrep.Ryna             = Ryna;
 sengkrep.Fingerprint      = Fingerprint;

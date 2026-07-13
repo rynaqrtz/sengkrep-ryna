@@ -32,6 +32,18 @@ class CanceledError extends FetchError {
 
 const KNOWN_ENCODINGS = new Set(['gzip', 'br', 'deflate', 'zstd', 'identity']);
 
+function parseRetryAfter(headerValue) {
+  if (!headerValue) return null;
+
+  const seconds = Number(headerValue);
+  if (!isNaN(seconds)) return Math.max(0, seconds * 1000);
+
+  const dateMs = Date.parse(headerValue);
+  if (!isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+
+  return null;
+}
+
 function decompressStream(encoding) {
   if (!encoding || encoding === 'identity') return { transform: null, unsupported: false };
   if (encoding === 'gzip')    return { transform: zlib.createGunzip(), unsupported: false };
@@ -75,6 +87,11 @@ class Fetcher {
         ));
       }
 
+      const declaredLength = res.headers['content-length'] ? parseInt(res.headers['content-length'], 10) : null;
+      const verifyLength   = config.verifyLength !== false;
+      let rawBytesReceived = 0;
+      res.on('data', (chunk) => { rawBytesReceived += chunk.length; });
+
       const source = decomp.transform ? res.pipe(decomp.transform) : res;
 
       let chunks       = [];
@@ -91,6 +108,16 @@ class Fetcher {
         if (err) return reject(err);
         resolve(result);
       };
+
+      const truncationError = () => new FetchError(
+        `Response ended before it was complete${declaredLength !== null ? ` (declared Content-Length: ${declaredLength}, received: ${rawBytesReceived})` : ''}. The connection likely dropped mid-transfer.`,
+        null,
+        'TRUNCATED_RESPONSE',
+      );
+
+      res.on('aborted', () => {
+        if (verifyLength) finish(truncationError());
+      });
 
       source.on('data', (chunk) => {
         totalSize += chunk.length;
@@ -114,6 +141,10 @@ class Fetcher {
       });
 
       source.on('end', () => {
+        if (verifyLength && res.complete === false) {
+          return finish(truncationError());
+        }
+
         if (fileStream) {
           fileStream.end(() => finish(null, { streamed: true, filePath, size: totalSize }));
         } else {
@@ -122,7 +153,10 @@ class Fetcher {
       });
 
       source.on('error', (err) => finish(new FetchError(`Decompress/stream failed: ${err.message}`, null, 'DECOMPRESS_ERROR')));
-      res.on('error', (err) => finish(new FetchError(err.message, null, 'STREAM_ERROR')));
+      res.on('error', (err) => {
+        if (verifyLength && res.complete === false) return finish(truncationError());
+        finish(new FetchError(err.message, null, 'STREAM_ERROR'));
+      });
     });
   }
 
@@ -189,8 +223,10 @@ class Fetcher {
       };
 
       const requestSize = config.body ? Buffer.byteLength(config.body) : 0;
+      let responseStarted = false;
 
       const req = lib.request(reqOptions, async (res) => {
+        responseStarted = true;
         const { statusCode, headers: resHeaders } = res;
 
         if (this.cookieJar && resHeaders['set-cookie']) {
@@ -218,7 +254,10 @@ class Fetcher {
 
         if (statusCode >= 400) {
           res.resume();
-          return finish(reject, new FetchError(`HTTP ${statusCode}`, statusCode, 'HTTP_ERROR'));
+          const err = new FetchError(`HTTP ${statusCode}`, statusCode, 'HTTP_ERROR');
+          err.headers    = resHeaders;
+          err.retryAfterMs = parseRetryAfter(resHeaders['retry-after']);
+          return finish(reject, err);
         }
 
         try {
@@ -275,6 +314,13 @@ class Fetcher {
 
       req.on('error', (err) => {
         if (err.code === 'PROXY_ERROR') return finish(reject, err);
+        if (responseStarted && config.verifyLength !== false) {
+          return finish(reject, new FetchError(
+            `Connection dropped while receiving the response body: ${err.message}`,
+            null,
+            'TRUNCATED_RESPONSE',
+          ));
+        }
         finish(reject, new FetchError(err.message, null, 'NETWORK_ERROR'));
       });
 
@@ -293,6 +339,7 @@ class Fetcher {
       timeout:            options.timeout             ?? this.timeout,
       rejectUnauthorized: options.rejectUnauthorized   ?? undefined,
       bufferAll:          options.bufferAll            ?? false,
+      verifyLength:       options.verifyLength         ?? true,
     };
 
     if (this.interceptors) {

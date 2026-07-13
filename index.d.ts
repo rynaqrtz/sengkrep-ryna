@@ -73,6 +73,12 @@ export interface ValidationReport {
   warnings: ValidationErrorDetail[];
 }
 
+export interface RateLimitInfo {
+  limit: number | null;
+  remaining: number | null;
+  resetSeconds: number | null;
+}
+
 export interface RynaMeta {
   responseType: 'html' | 'json' | 'feed' | 'csv' | 'binary' | 'streamed';
   cache?: { hit: boolean };
@@ -82,6 +88,7 @@ export interface RynaMeta {
   sniffedType?: string | null;
   filePath?: string | null;
   size?: number | null;
+  rateLimit?: RateLimitInfo;
 }
 
 export type ExtractResult<T = Record<string, unknown>> = T & {
@@ -140,6 +147,7 @@ export interface PaginationConfig {
   itemsSelector?: string | null;
   maxPages?: number;
   delayBetweenPages?: number;
+  stopOnDuplicate?: boolean;
 }
 
 export interface CrawlOptions {
@@ -151,6 +159,8 @@ export interface CrawlOptions {
   stateFile?: string | null;
   saveEvery?: number;
   linkOptions?: Record<string, unknown>;
+  respectRobotsTxt?: boolean;
+  userAgent?: string;
 }
 
 export interface CrawlJob {
@@ -190,7 +200,9 @@ export interface RetryOptions {
   retryOn?: number[];
   retryOnNetwork?: boolean;
   retryOnTimeout?: boolean;
-  onRetry?: (info: { attempt: number; status: number | null; code: string | null; waitMs: number }) => void;
+  respectRetryAfter?: boolean;
+  maxRetryAfter?: number;
+  onRetry?: (info: { attempt: number; status: number | null; code: string | null; waitMs: number; respectedRetryAfter: boolean }) => void;
 }
 
 export interface HealthOptions {
@@ -203,6 +215,7 @@ export interface DiffOptions {
   storageDir?: string;
   sensitivity?: 'structural' | 'value';
   onDiff?: (report: DiffReport) => void;
+  maxHistory?: number;
 }
 
 export interface CacheOptions {
@@ -319,6 +332,8 @@ export interface RynaOptions {
 export class FetchError extends Error {
   status: number | null;
   code: string;
+  retryAfterMs?: number | null;
+  headers?: Record<string, string | string[] | undefined>;
 }
 export class TimeoutError extends FetchError {}
 export class CanceledError extends FetchError {}
@@ -363,6 +378,9 @@ export class HealthMonitor {
 export class DiffDetector {
   constructor(options?: DiffOptions);
   check(url: string, data: unknown): DiffReport;
+  getAllChanges(url?: string): DiffReport[];
+  getChangedOnly(url?: string): DiffReport[];
+  clearHistory(): void;
   clearSnapshot(url: string): void;
   clearAll(): void;
 }
@@ -419,6 +437,8 @@ export class Webhook {
 
 export class Discover {
   discover(origin: string, options?: { maxDepth?: number; maxEntries?: number; pattern?: RegExp }): Promise<string[]>;
+  isAllowed(url: string, userAgent?: string): Promise<boolean>;
+  getCrawlDelay(origin: string, userAgent?: string): Promise<number | null>;
 }
 
 export class SecurityGuard {
@@ -654,6 +674,8 @@ export class Ryna {
   login(url: string, formData?: Record<string, unknown>, options?: { headers?: Record<string, string> }): Promise<boolean>;
   submitForm(url: string, formSelector: string, overrides?: Record<string, unknown>): Promise<{ status: number; headers: Record<string, unknown>; body: string; url: string }>;
   discover(origin: string, options?: { maxDepth?: number; maxEntries?: number; pattern?: RegExp }): Promise<string[]>;
+  isAllowed(url: string, userAgent?: string): Promise<boolean>;
+  getCrawlDelay(origin: string, userAgent?: string): Promise<number | null>;
   export(input: string | string[] | unknown, schema?: Record<string, SchemaField>, options?: Record<string, unknown>): Promise<string>;
 
   inferSchema(url: string, options?: { hints?: string[]; list?: boolean }): Promise<SchemaInferenceResult>;
@@ -680,6 +702,8 @@ export interface SengkrepStatic {
   paginate<T = Record<string, unknown>>(startUrl: string, config: PaginationConfig, schema: Schema<T>, options?: ExtractOptions): Promise<T[]>;
   login(url: string, formData?: Record<string, unknown>, options?: Record<string, unknown>): Promise<boolean>;
   discover(origin: string, options?: Record<string, unknown>): Promise<string[]>;
+  isAllowed(url: string, userAgent?: string): Promise<boolean>;
+  getCrawlDelay(origin: string, userAgent?: string): Promise<number | null>;
   export(input: string | string[] | unknown, schema?: Record<string, SchemaField>, options?: Record<string, unknown>): Promise<string>;
   crawl(options: CrawlOptions): CrawlJob;
   submitForm(url: string, formSelector: string, overrides?: Record<string, unknown>): Promise<unknown>;
